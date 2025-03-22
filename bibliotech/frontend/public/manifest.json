@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "BiblioTech",
+  "name": "BiblioTech - Sistema de Gerenciamento de Biblioteca",
   "icons": [
     {
       "src": "favicon.ico",
