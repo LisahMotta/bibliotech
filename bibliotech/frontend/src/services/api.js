@@ -13,7 +13,7 @@ export const authService = {
     try {
       const response = await api.post('/api/auth/login', { email, senha });
       if (response.data) {
-        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
       }
       return response.data;
     } catch (error) {
@@ -45,16 +45,16 @@ export const authService = {
   },
 
   logout: () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem('usuarioAtual');
   }
 };
 
 // Interceptor para adicionar token de autenticação
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
+    const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
+    if (usuarioAtual.token) {
+      config.headers.Authorization = `Bearer ${usuarioAtual.token}`;
     }
     return config;
   },

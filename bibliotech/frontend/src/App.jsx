@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
 import { authService } from './services/api';
+import { api } from './services/api';
 
 ChartJS.register(
   CategoryScale,
@@ -146,14 +147,9 @@ const App = () => {
   // Função para buscar alunos do backend
   const buscarAlunos = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos`, {
-        headers: {
-          'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
-        }
-      });
+      const response = await api.get('/api/alunos');
       if (!response.ok) throw new Error('Erro ao buscar alunos');
-      const data = await response.json();
-      setAlunos(data);
+      setAlunos(response.data);
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
       alert('Erro ao carregar lista de alunos');
@@ -163,10 +159,9 @@ const App = () => {
   // Função para buscar livros do backend
   const buscarLivros = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/livros`);
+      const response = await api.get('/api/livros');
       if (!response.ok) throw new Error('Erro ao buscar livros');
-      const data = await response.json();
-      setLivros(data);
+      setLivros(response.data);
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
       alert('Erro ao carregar lista de livros');
@@ -210,11 +205,11 @@ const App = () => {
     });
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
@@ -222,24 +217,20 @@ const App = () => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-          // Mapear os dados do Excel para o formato esperado
           const livrosImportados = jsonData.map(item => ({
-            id: Date.now() + Math.random(),
-            nome: item.nome || item.Nome || item.NOME || '',
+            titulo: item.nome || item.Nome || item.NOME || '',
             autor: item.autor || item.Autor || item.AUTOR || '',
-            isbn: item.isbn || item.ISBN || '',
-            edicao: item.edicao || item.Edição || item.EDICAO || '',
             genero: item.genero || item.Gênero || item.GENERO || '',
-            numeroTombo: item.numeroTombo || item['Número de Tombo'] || item.NUMERO_TOMBO || ''
+            ano: parseInt(item.ano || item.Ano || item.ANO || new Date().getFullYear()),
+            disponivel: true
           }));
 
-          // Validar dados importados
           const livrosValidos = livrosImportados.filter(livro => 
-            livro.nome && livro.autor && livro.numeroTombo
+            livro.titulo && livro.autor && livro.genero && livro.ano
           );
 
           if (livrosValidos.length === 0) {
-            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, autor e número de tombo.');
+            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, autor, gênero e ano.');
             return;
           }
 
@@ -247,16 +238,26 @@ const App = () => {
             alert(`Atenção: ${livrosImportados.length - livrosValidos.length} livros foram ignorados por falta de dados obrigatórios.`);
           }
 
-          setLivros(prev => [...prev, ...livrosValidos]);
-          alert(`${livrosValidos.length} livros importados com sucesso!`);
+          // Enviar para o backend usando o serviço de API
+          const response = await api.post('/api/livros/importar', livrosValidos);
           
-          // Limpar input file
+          if (response.data) {
+            alert(`${response.data.resultado.sucesso.length} livros importados com sucesso!`);
+            
+            // Atualizar a lista de livros
+            const livrosResponse = await api.get('/api/livros');
+            if (livrosResponse.data) {
+              setLivros(livrosResponse.data);
+            }
+          }
+          
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+          const mensagemErro = error.response?.data?.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.';
+          alert(mensagemErro);
         }
       };
       reader.readAsArrayBuffer(file);
@@ -321,44 +322,26 @@ const App = () => {
             alert(`Atenção: ${alunosImportados.length - alunosValidos.length} alunos foram ignorados por falta de dados obrigatórios.`);
           }
 
-          // Enviar para o backend
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos/importar`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
-            },
-            body: JSON.stringify(alunosValidos)
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Erro ao importar alunos');
-          }
-
-          const resultado = await response.json();
-          alert(`${resultado.resultado.sucesso.length} alunos importados com sucesso!`);
+          // Enviar para o backend usando o serviço de API
+          const response = await api.post('/api/alunos/importar', alunosValidos);
           
-          // Atualizar a lista de alunos
-          const alunosResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos`, {
-            headers: {
-              'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
+          if (response.data) {
+            alert(`${response.data.resultado.sucesso.length} alunos importados com sucesso!`);
+            
+            // Atualizar a lista de alunos
+            const alunosResponse = await api.get('/api/alunos');
+            if (alunosResponse.data) {
+              setAlunos(alunosResponse.data);
             }
-          });
-          
-          if (!alunosResponse.ok) {
-            throw new Error('Erro ao buscar alunos');
           }
-          
-          const alunosData = await alunosResponse.json();
-          setAlunos(alunosData);
           
           if (fileInputAlunoRef.current) {
             fileInputAlunoRef.current.value = '';
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          alert(error.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+          const mensagemErro = error.response?.data?.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.';
+          alert(mensagemErro);
         }
       };
       reader.readAsArrayBuffer(file);
