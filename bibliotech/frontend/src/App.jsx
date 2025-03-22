@@ -135,6 +135,61 @@ const App = () => {
     return () => clearInterval(intervalo);
   }, [emprestimos]);
 
+  // Modificar a função de login
+  const fazerLogin = async (e) => {
+    e.preventDefault();
+    setMensagemErro('');
+    setMensagemSucesso('');
+    
+    try {
+      console.log('Tentando fazer login...');
+      const response = await authService.login(formLogin.email, formLogin.senha);
+      console.log('Resposta do login:', response);
+      
+      if (response && response.token) {
+        // Configura o token nos headers do axios
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
+        
+        // Atualiza o estado do usuário
+        setUsuarioAtual(response);
+        setMostrarLogin(false);
+        setMensagemSucesso('Login realizado com sucesso!');
+        
+        // Busca dados iniciais após login bem-sucedido
+        try {
+          const [alunosResponse, livrosResponse] = await Promise.all([
+            api.get('/api/alunos'),
+            api.get('/api/livros')
+          ]);
+          
+          if (alunosResponse.data) {
+            setAlunos(alunosResponse.data);
+          }
+          
+          if (livrosResponse.data) {
+            setLivros(livrosResponse.data);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar dados iniciais:', error);
+          if (error.response?.status === 401) {
+            setMensagemErro('Erro de autenticação ao buscar dados. Por favor, faça login novamente.');
+            setUsuarioAtual(null);
+            setMostrarLogin(true);
+            localStorage.removeItem('usuarioAtual');
+            delete api.defaults.headers.common['Authorization'];
+          }
+        }
+      } else {
+        setMensagemErro('Resposta inválida do servidor');
+        setUsuarioAtual(null);
+      }
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      setMensagemErro(error.message || 'Email ou senha incorretos');
+      setUsuarioAtual(null);
+    }
+  };
+
   // Atualizar o useEffect de verificação de usuário
   useEffect(() => {
     const verificarUsuario = async () => {
@@ -145,30 +200,48 @@ const App = () => {
           console.log('Verificando usuário salvo:', usuario);
           
           if (usuario && usuario.token) {
+            // Configura o token nos headers do axios
+            api.defaults.headers.common['Authorization'] = `Bearer ${usuario.token}`;
+            
+            // Atualiza o estado do usuário
             setUsuarioAtual(usuario);
             setMostrarLogin(false);
             
             // Busca dados iniciais
             try {
-              await buscarAlunos();
-              await buscarLivros();
+              const [alunosResponse, livrosResponse] = await Promise.all([
+                api.get('/api/alunos'),
+                api.get('/api/livros')
+              ]);
+              
+              if (alunosResponse.data) {
+                setAlunos(alunosResponse.data);
+              }
+              
+              if (livrosResponse.data) {
+                setLivros(livrosResponse.data);
+              }
             } catch (error) {
               console.error('Erro ao buscar dados iniciais:', error);
               if (error.response?.status === 401) {
+                setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
                 setUsuarioAtual(null);
                 setMostrarLogin(true);
                 localStorage.removeItem('usuarioAtual');
+                delete api.defaults.headers.common['Authorization'];
               }
             }
           } else {
             console.log('Token não encontrado no usuário salvo');
             localStorage.removeItem('usuarioAtual');
+            delete api.defaults.headers.common['Authorization'];
             setUsuarioAtual(null);
             setMostrarLogin(true);
           }
         } catch (error) {
           console.error('Erro ao processar usuário salvo:', error);
           localStorage.removeItem('usuarioAtual');
+          delete api.defaults.headers.common['Authorization'];
           setUsuarioAtual(null);
           setMostrarLogin(true);
         }
@@ -832,40 +905,6 @@ const App = () => {
       });
     } catch (error) {
       setMensagemErro(error.message || 'Erro ao cadastrar usuário');
-    }
-  };
-
-  // Modificar a função de login
-  const fazerLogin = async (e) => {
-    e.preventDefault();
-    setMensagemErro('');
-    setMensagemSucesso('');
-    
-    try {
-      console.log('Tentando fazer login...');
-      const response = await authService.login(formLogin.email, formLogin.senha);
-      console.log('Resposta do login:', response);
-      
-      if (response && response.token) {
-        setUsuarioAtual(response);
-        setMostrarLogin(false);
-        setMensagemSucesso('Login realizado com sucesso!');
-        
-        // Busca dados iniciais após login bem-sucedido
-        try {
-          await buscarAlunos();
-          await buscarLivros();
-        } catch (error) {
-          console.error('Erro ao buscar dados iniciais:', error);
-        }
-      } else {
-        setMensagemErro('Resposta inválida do servidor');
-        setUsuarioAtual(null);
-      }
-    } catch (error) {
-      console.error('Erro ao fazer login:', error);
-      setMensagemErro(error.message || 'Email ou senha incorretos');
-      setUsuarioAtual(null);
     }
   };
 

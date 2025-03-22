@@ -68,10 +68,11 @@ api.interceptors.request.use(
       if (usuarioAtual.token) {
         config.headers.Authorization = `Bearer ${usuarioAtual.token}`;
       }
+      return config;
     } catch (error) {
       console.error('Erro ao processar token:', error);
+      return config;
     }
-    return config;
   },
   (error) => {
     return Promise.reject(error);
@@ -88,12 +89,9 @@ api.interceptors.response.use(
       const isLoginRequest = error.config.url.includes('/api/auth/login');
       
       if (!isLoginRequest) {
-        const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
-        if (usuarioAtual.token) {
-          localStorage.removeItem('usuarioAtual');
-          delete api.defaults.headers.common['Authorization'];
-          window.dispatchEvent(new Event('authError'));
-        }
+        localStorage.removeItem('usuarioAtual');
+        delete api.defaults.headers.common['Authorization'];
+        window.dispatchEvent(new Event('authError'));
       }
     }
     return Promise.reject(error);
@@ -109,6 +107,7 @@ try {
 } catch (error) {
   console.error('Erro ao inicializar token:', error);
   localStorage.removeItem('usuarioAtual');
+  delete api.defaults.headers.common['Authorization'];
 }
 
 export { api };
