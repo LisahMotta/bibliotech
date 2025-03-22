@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
 
 // Middlewares
 app.use(express.json());
@@ -17,8 +18,8 @@ app.use('/alunos', alunoRoutes);
 app.use('/livros', livroRoutes);
 app.use('/emprestimos', emprestimoRoutes);
 
-// Conexão com o banco (substitua com sua URI se necessário)
-mongoose.connect('mongodb://localhost:27017/bibliotech', {
+// Conexão com o banco
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -26,7 +27,9 @@ mongoose.connect('mongodb://localhost:27017/bibliotech', {
 .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
 
 // Início do servidor
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
 });
