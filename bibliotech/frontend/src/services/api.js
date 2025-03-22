@@ -161,16 +161,10 @@ export const authService = {
         throw new Error('Token não encontrado');
       }
 
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
       console.log('Fazendo requisição GET para:', url);
-      console.log('Headers da requisição:', config.headers);
+      console.log('Token atual:', token);
 
-      const response = await api.get(url, config);
+      const response = await api.get(url);
       return response;
     } catch (error) {
       console.error('Erro na requisição GET:', error);

@@ -207,10 +207,22 @@ const App = () => {
         setMostrarLogin(false);
         setMensagemSucesso('Login realizado com sucesso!');
         
+        // Aguarda um momento para garantir que o token foi configurado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         try {
           console.log('Iniciando busca de dados após login...');
-          await buscarAlunos();
-          await buscarLivros();
+          // Busca os dados em sequência para melhor tratamento de erros
+          const alunosResponse = await authService.get('/api/alunos');
+          if (alunosResponse?.data) {
+            setAlunos(alunosResponse.data);
+          }
+          
+          const livrosResponse = await authService.get('/api/livros');
+          if (livrosResponse?.data) {
+            setLivros(livrosResponse.data);
+          }
+          
           console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
           console.error('Erro ao buscar dados iniciais após login:', error);
