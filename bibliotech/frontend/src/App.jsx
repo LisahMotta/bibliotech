@@ -148,7 +148,6 @@ const App = () => {
   const buscarAlunos = async () => {
     try {
       const response = await api.get('/api/alunos');
-      if (!response.ok) throw new Error('Erro ao buscar alunos');
       setAlunos(response.data);
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
@@ -160,7 +159,6 @@ const App = () => {
   const buscarLivros = async () => {
     try {
       const response = await api.get('/api/livros');
-      if (!response.ok) throw new Error('Erro ao buscar livros');
       setLivros(response.data);
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
@@ -781,11 +779,19 @@ const App = () => {
     
     try {
       const response = await authService.login(formLogin.email, formLogin.senha);
-      setUsuarioAtual(response);
-      setMostrarLogin(false);
-      
-      // Salva os dados do usuário no localStorage
-      localStorage.setItem('usuarioAtual', JSON.stringify(response));
+      if (response.token) {
+        setUsuarioAtual(response);
+        setMostrarLogin(false);
+        
+        // Salva os dados do usuário no localStorage
+        localStorage.setItem('usuarioAtual', JSON.stringify(response));
+        
+        // Busca dados iniciais
+        await buscarAlunos();
+        await buscarLivros();
+      } else {
+        setMensagemErro('Token não recebido do servidor');
+      }
     } catch (error) {
       setMensagemErro(error.message || 'Email ou senha incorretos');
     }

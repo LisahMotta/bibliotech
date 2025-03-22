@@ -52,13 +52,30 @@ export const authService = {
 // Interceptor para adicionar token de autenticação
 api.interceptors.request.use(
   (config) => {
-    const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
-    if (usuarioAtual.token) {
-      config.headers.Authorization = `Bearer ${usuarioAtual.token}`;
+    try {
+      const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
+      if (usuarioAtual.token) {
+        config.headers.Authorization = `Bearer ${usuarioAtual.token}`;
+      }
+    } catch (error) {
+      console.error('Erro ao processar token:', error);
     }
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para tratar erros de autenticação
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Limpa o token e redireciona para o login
+      localStorage.removeItem('usuarioAtual');
+      window.location.reload();
+    }
     return Promise.reject(error);
   }
 );
