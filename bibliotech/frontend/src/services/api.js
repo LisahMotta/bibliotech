@@ -14,6 +14,8 @@ export const authService = {
       const response = await api.post('/api/auth/login', { email, senha });
       if (response.data && response.data.token) {
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
+        // Configura o token após o login bem-sucedido
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       }
       return response.data;
     } catch (error) {
@@ -46,6 +48,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem('usuarioAtual');
+    delete api.defaults.headers.common['Authorization'];
   }
 };
 
@@ -72,16 +75,29 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Limpa o token e redireciona para o login apenas se não estiver na página de login
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login')) {
-        localStorage.removeItem('usuarioAtual');
-        window.location.reload();
+      // Verifica se a requisição é para a rota de login
+      const isLoginRequest = error.config.url.includes('/api/auth/login');
+      
+      // Se não for uma requisição de login e houver um token, limpa o token
+      if (!isLoginRequest) {
+        const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
+        if (usuarioAtual.token) {
+          localStorage.removeItem('usuarioAtual');
+          delete api.defaults.headers.common['Authorization'];
+          // Dispara um evento customizado para notificar o App.jsx
+          window.dispatchEvent(new Event('authError'));
+        }
       }
     }
     return Promise.reject(error);
   }
 );
+
+// Inicializa o token se existir no localStorage
+const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
+if (usuarioAtual.token) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${usuarioAtual.token}`;
+}
 
 export { api };
 export default api; 

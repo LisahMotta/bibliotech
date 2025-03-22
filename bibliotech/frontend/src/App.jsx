@@ -139,19 +139,52 @@ const App = () => {
   useEffect(() => {
     const usuarioSalvo = localStorage.getItem('usuarioAtual');
     if (usuarioSalvo) {
-      setUsuarioAtual(JSON.parse(usuarioSalvo));
-      setMostrarLogin(false);
+      try {
+        const usuario = JSON.parse(usuarioSalvo);
+        if (usuario.token) {
+          setUsuarioAtual(usuario);
+          setMostrarLogin(false);
+          // Busca dados iniciais
+          buscarAlunos();
+          buscarLivros();
+        } else {
+          localStorage.removeItem('usuarioAtual');
+        }
+      } catch (error) {
+        console.error('Erro ao processar usuário salvo:', error);
+        localStorage.removeItem('usuarioAtual');
+      }
     }
+  }, []);
+
+  // Adicionar useEffect para lidar com erros de autenticação
+  useEffect(() => {
+    const handleAuthError = () => {
+      setUsuarioAtual(null);
+      setMostrarLogin(true);
+      setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+    };
+
+    window.addEventListener('authError', handleAuthError);
+    return () => window.removeEventListener('authError', handleAuthError);
   }, []);
 
   // Função para buscar alunos do backend
   const buscarAlunos = async () => {
     try {
       const response = await api.get('/api/alunos');
-      setAlunos(response.data);
+      if (response.data) {
+        setAlunos(response.data);
+      }
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
-      alert('Erro ao carregar lista de alunos');
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        alert('Erro ao carregar lista de alunos');
+      }
     }
   };
 
@@ -159,10 +192,18 @@ const App = () => {
   const buscarLivros = async () => {
     try {
       const response = await api.get('/api/livros');
-      setLivros(response.data);
+      if (response.data) {
+        setLivros(response.data);
+      }
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
-      alert('Erro ao carregar lista de livros');
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        alert('Erro ao carregar lista de livros');
+      }
     }
   };
 
@@ -772,7 +813,7 @@ const App = () => {
     }
   };
 
-  // Função para fazer login
+  // Modificar a função de login
   const fazerLogin = async (e) => {
     e.preventDefault();
     setMensagemErro('');
@@ -782,9 +823,7 @@ const App = () => {
       if (response && response.token) {
         setUsuarioAtual(response);
         setMostrarLogin(false);
-        
-        // Salva os dados do usuário no localStorage
-        localStorage.setItem('usuarioAtual', JSON.stringify(response));
+        setMensagemErro('');
         
         // Busca dados iniciais
         await buscarAlunos();
