@@ -15,9 +15,9 @@ const emprestimoRoutes = require('./routes/emprestimos');
 const authRoutes = require('./routes/auth');
 
 // Uso das rotas
-app.use('/alunos', alunoRoutes);
-app.use('/livros', livroRoutes);
-app.use('/emprestimos', emprestimoRoutes);
+app.use('/api/alunos', alunoRoutes);
+app.use('/api/livros', livroRoutes);
+app.use('/api/emprestimos', emprestimoRoutes);
 app.use('/api/auth', authRoutes);
 
 // Conexão com o banco
@@ -27,6 +27,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => console.log("MongoDB conectado com sucesso!"))
 .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
+
+// Rota de teste
+app.get('/', (req, res) => {
+  res.json({ message: 'API BiblioTech funcionando!' });
+});
 
 // Início do servidor
 const PORT = process.env.PORT || 5000;
