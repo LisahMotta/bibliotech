@@ -1324,53 +1324,72 @@ input[readonly] {
 }
 
 .form-emprestimo {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 1rem;
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.form-emprestimo .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-emprestimo label {
-  font-weight: bold;
+.form-emprestimo h2 {
   color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
-.form-emprestimo select,
-.form-emprestimo input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  background-color: #fff;
+  transition: border-color 0.2s ease;
 }
 
-.form-emprestimo select {
-  background-color: white;
-  cursor: pointer;
+.form-group select:hover,
+.form-group input:hover {
+  border-color: #999;
 }
 
-.form-emprestimo select:hover {
-  border-color: #666;
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
-.form-emprestimo .btn-cadastrar {
-  background-color: #4CAF50;
-  color: white;
+.btn-cadastrar {
+  width: 100%;
   padding: 0.75rem;
+  background-color: #4a90e2;
+  color: white;
   border: none;
   border-radius: 4px;
-  cursor: pointer;
   font-size: 1rem;
-  margin-top: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.form-emprestimo .btn-cadastrar:hover {
-  background-color: #45a049;
+.btn-cadastrar:hover {
+  background-color: #357abd;
+}
+
+.btn-cadastrar:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }

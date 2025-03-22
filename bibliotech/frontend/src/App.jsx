@@ -143,6 +143,44 @@ const App = () => {
     }
   }, []);
 
+  // Função para buscar alunos do backend
+  const buscarAlunos = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos`, {
+        headers: {
+          'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
+        }
+      });
+      if (!response.ok) throw new Error('Erro ao buscar alunos');
+      const data = await response.json();
+      setAlunos(data);
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      alert('Erro ao carregar lista de alunos');
+    }
+  };
+
+  // Função para buscar livros do backend
+  const buscarLivros = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/livros`);
+      if (!response.ok) throw new Error('Erro ao buscar livros');
+      const data = await response.json();
+      setLivros(data);
+    } catch (error) {
+      console.error('Erro ao buscar livros:', error);
+      alert('Erro ao carregar lista de livros');
+    }
+  };
+
+  // Carregar alunos e livros ao iniciar
+  useEffect(() => {
+    if (usuarioAtual) {
+      buscarAlunos();
+      buscarLivros();
+    }
+  }, [usuarioAtual]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNovoLivro(prev => ({
@@ -251,11 +289,11 @@ const App = () => {
     });
   };
 
-  const handleFileUploadAluno = (e) => {
+  const handleFileUploadAluno = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
@@ -264,18 +302,18 @@ const App = () => {
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
           const alunosImportados = jsonData.map(item => ({
-            id: Date.now() + Math.random(),
             nome: item.nome || item.Nome || item.NOME || '',
-            ra: item.ra || item.RA || item.Ra || '',
-            serie: item.serie || item.Série || item.SERIE || ''
+            matricula: item.ra || item.RA || item.Ra || '',
+            curso: item.serie || item.Série || item.SERIE || '',
+            email: item.email || item.Email || item.EMAIL || ''
           }));
 
           const alunosValidos = alunosImportados.filter(aluno => 
-            aluno.nome && aluno.ra && aluno.serie
+            aluno.nome && aluno.matricula && aluno.curso
           );
 
           if (alunosValidos.length === 0) {
-            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA e série.');
+            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA, série e email.');
             return;
           }
 
@@ -283,8 +321,25 @@ const App = () => {
             alert(`Atenção: ${alunosImportados.length - alunosValidos.length} alunos foram ignorados por falta de dados obrigatórios.`);
           }
 
-          setAlunos(prev => [...prev, ...alunosValidos]);
-          alert(`${alunosValidos.length} alunos importados com sucesso!`);
+          // Enviar para o backend
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos/importar`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
+            },
+            body: JSON.stringify(alunosValidos)
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ao importar alunos');
+          }
+
+          const resultado = await response.json();
+          alert(`${resultado.resultado.sucesso.length} alunos importados com sucesso!`);
+          
+          // Atualizar a lista de alunos
+          buscarAlunos();
           
           if (fileInputAlunoRef.current) {
             fileInputAlunoRef.current.value = '';
@@ -343,13 +398,28 @@ const App = () => {
     }
   };
 
-  const selecionarAluno = (aluno) => {
-    setNovoEmprestimo(prev => ({
-      ...prev,
-      alunoNome: aluno.nome,
-      alunoRA: aluno.ra,
-      alunoSerie: aluno.serie
-    }));
+  const selecionarAluno = (alunoId) => {
+    const aluno = alunos.find(a => a._id === alunoId);
+    if (aluno) {
+      setNovoEmprestimo(prev => ({
+        ...prev,
+        alunoId: aluno._id,
+        alunoNome: aluno.nome,
+        alunoRA: aluno.matricula,
+        alunoSerie: aluno.curso
+      }));
+    }
+  };
+
+  const selecionarLivro = (livroId) => {
+    const livro = livros.find(l => l._id === livroId);
+    if (livro) {
+      setNovoEmprestimo(prev => ({
+        ...prev,
+        livroId: livro._id,
+        livroNome: livro.titulo
+      }));
+    }
   };
 
   const cadastrarEmprestimo = (e) => {
@@ -577,7 +647,7 @@ const App = () => {
     setFichaEmprestimo({
       ...fichaEmprestimo,
       alunoNome: aluno.nome,
-      alunoRA: aluno.ra,
+      alunoRA: aluno.matricula,
       alunoSerie: aluno.serie
     });
     setAlunoSelecionadoFicha(aluno);
@@ -1210,42 +1280,34 @@ const App = () => {
                   <h2>Novo Empréstimo</h2>
                   <form onSubmit={cadastrarEmprestimo} className="form-emprestimo">
                     <div className="form-group">
-                      <label>Selecione o Aluno:</label>
-                      <select 
-                        value={novoEmprestimo.alunoRA}
-                        onChange={(e) => {
-                          const alunoSelecionado = alunos.find(a => a.ra === e.target.value);
-                          if (alunoSelecionado) {
-                            selecionarAluno(alunoSelecionado);
-                          }
-                        }}
+                      <label>Aluno:</label>
+                      <select
+                        value={novoEmprestimo.alunoId || ''}
+                        onChange={(e) => selecionarAluno(e.target.value)}
                         required
                       >
                         <option value="">Selecione um aluno</option>
                         {alunos.map(aluno => (
-                          <option key={aluno.ra} value={aluno.ra}>
-                            {aluno.nome} - RA: {aluno.ra} - Série: {aluno.serie}
+                          <option key={aluno._id} value={aluno._id}>
+                            {aluno.nome} - {aluno.matricula} - {aluno.curso}
                           </option>
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="form-group">
                       <label>Livro:</label>
                       <select
-                        name="livroNome"
-                        value={novoEmprestimo.livroNome}
-                        onChange={handleInputChangeEmprestimo}
+                        value={novoEmprestimo.livroId || ''}
+                        onChange={(e) => selecionarLivro(e.target.value)}
                         required
                       >
                         <option value="">Selecione um livro</option>
                         {livros
-                          .filter(livro => !emprestimos.some(emp => 
-                            emp.livroNome === livro.nome && emp.status === 'emprestado'
-                          ))
+                          .filter(livro => livro.disponivel)
                           .map(livro => (
-                            <option key={livro.id} value={livro.nome}>
-                              {livro.nome} - {livro.autor}
+                            <option key={livro._id} value={livro._id}>
+                              {livro.titulo} - {livro.autor}
                             </option>
                           ))}
                       </select>
@@ -1255,21 +1317,22 @@ const App = () => {
                       <label>Data do Empréstimo:</label>
                       <input
                         type="date"
-                        name="dataEmprestimo"
                         value={novoEmprestimo.dataEmprestimo}
-                        onChange={handleInputChangeEmprestimo}
+                        onChange={(e) => setNovoEmprestimo(prev => ({
+                          ...prev,
+                          dataEmprestimo: e.target.value,
+                          dataDevolucaoPrevista: new Date(new Date(e.target.value).getTime() + (PRAZO_EMPRESTIMO_DIAS * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+                        }))}
                         required
                       />
                     </div>
 
                     <div className="form-group">
-                      <label>Data Prevista de Devolução:</label>
+                      <label>Data de Devolução Prevista:</label>
                       <input
                         type="date"
-                        name="dataDevolucaoPrevista"
                         value={novoEmprestimo.dataDevolucaoPrevista}
-                        onChange={handleInputChangeEmprestimo}
-                        required
+                        readOnly
                       />
                     </div>
 
@@ -1481,29 +1544,29 @@ const App = () => {
                       value={serieSelecionada} 
                       onChange={(e) => {
                         setSerieSelecionada(e.target.value);
-                        setAlunosFiltrados(e.target.value ? filtrarAlunosPorSerie(e.target.value) : []);
+                        setAlunosFiltrados(e.target.value ? alunos.filter(a => a.curso === e.target.value) : []);
                       }}
                     >
                       <option value="">Selecione a Série</option>
-                      {getSeriesUnicas().map(serie => (
-                        <option key={serie} value={serie}>{serie}</option>
+                      {[...new Set(alunos.map(a => a.curso))].sort().map(curso => (
+                        <option key={curso} value={curso}>{curso}</option>
                       ))}
                     </select>
 
                     {serieSelecionada && (
                       <select
                         onChange={(e) => {
-                          const alunoSelecionado = alunos.find(a => a.id === parseInt(e.target.value));
+                          const alunoSelecionado = alunos.find(a => a._id === e.target.value);
                           if (alunoSelecionado) {
                             selecionarAlunoFicha(alunoSelecionado);
                           }
                         }}
-                        value={alunoSelecionadoFicha?.id || ''}
+                        value={alunoSelecionadoFicha?._id || ''}
                       >
                         <option value="">Selecione o Aluno</option>
                         {alunosFiltrados.map(aluno => (
-                          <option key={aluno.id} value={aluno.id}>
-                            {aluno.nome} - {aluno.ra}
+                          <option key={aluno._id} value={aluno._id}>
+                            {aluno.nome} - {aluno.matricula}
                           </option>
                         ))}
                       </select>
