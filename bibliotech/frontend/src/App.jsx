@@ -290,37 +290,56 @@ const App = () => {
 
   const handleInputChangeEmprestimo = (e) => {
     const { name, value } = e.target;
-    setNovoEmprestimo(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Auto-completar por RA
+    
     if (name === 'alunoRA') {
       const aluno = alunos.find(a => a.ra === value);
       if (aluno) {
         setNovoEmprestimo(prev => ({
           ...prev,
+          alunoRA: value,
           alunoNome: aluno.nome,
           alunoSerie: aluno.serie
         }));
+      } else {
+        setNovoEmprestimo(prev => ({
+          ...prev,
+          alunoRA: value,
+          alunoNome: '',
+          alunoSerie: ''
+        }));
       }
-    }
-
-    // Auto-completar por nome
-    if (name === 'alunoNome') {
-      const aluno = alunos.find(a => 
-        a.nome.toLowerCase() === value.toLowerCase() ||
-        a.nome.toLowerCase().startsWith(value.toLowerCase())
-      );
+    } else if (name === 'alunoNome') {
+      const aluno = alunos.find(a => a.nome.toLowerCase() === value.toLowerCase());
       if (aluno) {
         setNovoEmprestimo(prev => ({
           ...prev,
+          alunoNome: value,
           alunoRA: aluno.ra,
           alunoSerie: aluno.serie
         }));
+      } else {
+        setNovoEmprestimo(prev => ({
+          ...prev,
+          alunoNome: value,
+          alunoRA: '',
+          alunoSerie: ''
+        }));
       }
+    } else {
+      setNovoEmprestimo(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
+  };
+
+  const selecionarAluno = (aluno) => {
+    setNovoEmprestimo(prev => ({
+      ...prev,
+      alunoNome: aluno.nome,
+      alunoRA: aluno.ra,
+      alunoSerie: aluno.serie
+    }));
   };
 
   const cadastrarEmprestimo = (e) => {
@@ -1219,94 +1238,72 @@ const App = () => {
 
                 <div className="form-container">
                   <h2>Novo Empréstimo</h2>
-                  <form onSubmit={cadastrarEmprestimo} className="emprestimo-form">
+                  <form onSubmit={cadastrarEmprestimo} className="form-emprestimo">
                     <div className="form-group">
-                      <input
-                        type="text"
-                        name="alunoNome"
-                        value={novoEmprestimo.alunoNome}
-                        onChange={handleInputChangeEmprestimo}
-                        placeholder="Nome do Aluno"
-                        list="alunos-nomes-list"
-                      />
-                      <datalist id="alunos-nomes-list">
-                        {alunos.map(aluno => (
-                          <option key={aluno.id} value={aluno.nome}>
-                            {aluno.ra} - {aluno.serie}
-                          </option>
-                        ))}
-                      </datalist>
-                    </div>
-                    <div className="form-group">
-                      <input
-                        type="text"
-                        name="alunoRA"
+                      <label>Selecione o Aluno:</label>
+                      <select 
                         value={novoEmprestimo.alunoRA}
-                        onChange={handleInputChangeEmprestimo}
-                        placeholder="RA do Aluno"
-                        list="alunos-ra-list"
-                      />
-                      <datalist id="alunos-ra-list">
+                        onChange={(e) => {
+                          const alunoSelecionado = alunos.find(a => a.ra === e.target.value);
+                          if (alunoSelecionado) {
+                            selecionarAluno(alunoSelecionado);
+                          }
+                        }}
+                        required
+                      >
+                        <option value="">Selecione um aluno</option>
                         {alunos.map(aluno => (
-                          <option key={aluno.id} value={aluno.ra}>
-                            {aluno.nome} - {aluno.serie}
+                          <option key={aluno.ra} value={aluno.ra}>
+                            {aluno.nome} - RA: {aluno.ra} - Série: {aluno.serie}
                           </option>
                         ))}
-                      </datalist>
+                      </select>
                     </div>
+                    
                     <div className="form-group">
-                      <input
-                        type="text"
-                        name="alunoSerie"
-                        value={novoEmprestimo.alunoSerie}
-                        placeholder="Série"
-                        readOnly
-                      />
-                    </div>
-                    <div className="form-group">
-                      <input
-                        type="text"
+                      <label>Livro:</label>
+                      <select
                         name="livroNome"
                         value={novoEmprestimo.livroNome}
                         onChange={handleInputChangeEmprestimo}
-                        placeholder="Nome do Livro"
-                        list="livros-list"
-                      />
-                      <datalist id="livros-list">
-                        {livros.filter(livro => 
-                          !emprestimos.some(emp => 
-                            emp.livroNome === livro.nome && 
-                            emp.status === 'emprestado'
-                          )
-                        ).map(livro => (
-                          <option key={livro.id} value={livro.nome}>
-                            {livro.autor} - {livro.genero}
-                          </option>
-                        ))}
-                      </datalist>
+                        required
+                      >
+                        <option value="">Selecione um livro</option>
+                        {livros
+                          .filter(livro => !emprestimos.some(emp => 
+                            emp.livroNome === livro.nome && emp.status === 'emprestado'
+                          ))
+                          .map(livro => (
+                            <option key={livro.id} value={livro.nome}>
+                              {livro.nome} - {livro.autor}
+                            </option>
+                          ))}
+                      </select>
                     </div>
+
                     <div className="form-group">
+                      <label>Data do Empréstimo:</label>
                       <input
                         type="date"
                         name="dataEmprestimo"
                         value={novoEmprestimo.dataEmprestimo}
                         onChange={handleInputChangeEmprestimo}
+                        required
                       />
                     </div>
+
                     <div className="form-group">
+                      <label>Data Prevista de Devolução:</label>
                       <input
                         type="date"
                         name="dataDevolucaoPrevista"
                         value={novoEmprestimo.dataDevolucaoPrevista}
                         onChange={handleInputChangeEmprestimo}
-                        min={new Date().toISOString().split('T')[0]}
+                        required
                       />
-                      <small>Data prevista para devolução</small>
                     </div>
-                    <div className="form-buttons">
-                      <button type="submit">Cadastrar Empréstimo</button>
-                      <button type="button" onClick={limparFormularioEmprestimo}>Limpar</button>
-                    </div>
+
+                    <button type="submit" className="btn-cadastrar">Cadastrar Empréstimo</button>
                   </form>
                 </div>
 
