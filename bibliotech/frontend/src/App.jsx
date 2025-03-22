@@ -152,17 +152,32 @@ const App = () => {
         setMensagemSucesso('Login realizado com sucesso!');
         
         // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
+          console.log('Iniciando busca de dados após login...');
           // Busca dados iniciais após login bem-sucedido
           await Promise.all([
-            buscarAlunos(),
-            buscarLivros()
+            buscarAlunos().catch(error => {
+              console.error('Erro ao buscar alunos após login:', error);
+              throw error;
+            }),
+            buscarLivros().catch(error => {
+              console.error('Erro ao buscar livros após login:', error);
+              throw error;
+            })
           ]);
+          console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
           console.error('Erro ao buscar dados iniciais após login:', error);
-          setMensagemErro('Erro ao carregar dados. Por favor, tente novamente.');
+          if (error.response?.status === 401) {
+            setMensagemErro('Erro de autenticação. Por favor, faça login novamente.');
+            authService.logout();
+            setUsuarioAtual(null);
+            setMostrarLogin(true);
+          } else {
+            setMensagemErro('Erro ao carregar dados. Por favor, tente novamente.');
+          }
         }
       } else {
         setMensagemErro('Resposta inválida do servidor');
@@ -178,20 +193,30 @@ const App = () => {
   // Atualizar o useEffect de verificação de usuário
   useEffect(() => {
     const verificarUsuario = async () => {
+      console.log('Verificando usuário...');
       const usuario = authService.checkAuth();
+      
       if (usuario) {
         console.log('Usuário autenticado encontrado:', usuario);
         setUsuarioAtual(usuario);
         setMostrarLogin(false);
         
         // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
+          console.log('Iniciando busca de dados após verificação...');
           await Promise.all([
-            buscarAlunos(),
-            buscarLivros()
+            buscarAlunos().catch(error => {
+              console.error('Erro ao buscar alunos após verificação:', error);
+              throw error;
+            }),
+            buscarLivros().catch(error => {
+              console.error('Erro ao buscar livros após verificação:', error);
+              throw error;
+            })
           ]);
+          console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
           console.error('Erro ao buscar dados iniciais:', error);
           if (error.response?.status === 401) {
@@ -226,7 +251,12 @@ const App = () => {
   const buscarAlunos = async () => {
     try {
       console.log('Buscando alunos...');
+      const token = localStorage.getItem('token');
+      console.log('Token atual ao buscar alunos:', token);
+      
       const response = await api.get('/api/alunos');
+      console.log('Resposta da busca de alunos:', response);
+      
       if (response.data) {
         console.log('Alunos recebidos:', response.data);
         setAlunos(response.data);
@@ -248,7 +278,12 @@ const App = () => {
   const buscarLivros = async () => {
     try {
       console.log('Buscando livros...');
+      const token = localStorage.getItem('token');
+      console.log('Token atual ao buscar livros:', token);
+      
       const response = await api.get('/api/livros');
+      console.log('Resposta da busca de livros:', response);
+      
       if (response.data) {
         console.log('Livros recebidos:', response.data);
         setLivros(response.data);

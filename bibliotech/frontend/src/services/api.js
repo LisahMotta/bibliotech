@@ -10,12 +10,13 @@ const api = axios.create({
 
 const setAuthToken = (token) => {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     localStorage.setItem('token', token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     console.log('Token configurado:', token);
+    console.log('Headers após configuração:', api.defaults.headers.common);
   } else {
-    delete api.defaults.headers.common['Authorization'];
     localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
     console.log('Token removido');
   }
 };
@@ -38,8 +39,14 @@ export const authService = {
         // Salva os dados do usuário
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
         
-        // Configura o token para todas as próximas requisições
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        // Verifica se o token foi configurado corretamente
+        const tokenConfigurado = api.defaults.headers.common['Authorization'];
+        console.log('Token configurado após login:', tokenConfigurado);
+        
+        if (!tokenConfigurado) {
+          console.error('Token não foi configurado corretamente');
+          throw new Error('Erro na configuração do token');
+        }
         
         return response.data;
       } else {
@@ -77,7 +84,6 @@ export const authService = {
   logout: () => {
     setAuthToken(null);
     localStorage.removeItem('usuarioAtual');
-    delete api.defaults.headers.common['Authorization'];
   },
 
   checkAuth: () => {
@@ -88,9 +94,17 @@ export const authService = {
       try {
         const usuario = JSON.parse(usuarioAtual);
         setAuthToken(token);
-        // Configura o token para todas as próximas requisições
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        console.log('Token recuperado e configurado:', token);
+        
+        // Verifica se o token foi configurado corretamente
+        const tokenConfigurado = api.defaults.headers.common['Authorization'];
+        console.log('Token configurado após checkAuth:', tokenConfigurado);
+        
+        if (!tokenConfigurado) {
+          console.error('Token não foi configurado corretamente no checkAuth');
+          setAuthToken(null);
+          return null;
+        }
+        
         return usuario;
       } catch (error) {
         console.error('Erro ao processar dados do usuário:', error);
@@ -108,11 +122,15 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token adicionado à requisição:', config.url);
+      console.log('Requisição para:', config.url);
+      console.log('Headers da requisição:', config.headers);
+    } else {
+      console.log('Nenhum token encontrado para a requisição:', config.url);
     }
     return config;
   },
   (error) => {
+    console.error('Erro no interceptor de requisição:', error);
     return Promise.reject(error);
   }
 );
@@ -142,7 +160,6 @@ const token = localStorage.getItem('token');
 if (token) {
   console.log('Inicializando token do localStorage');
   setAuthToken(token);
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
 export { api };
