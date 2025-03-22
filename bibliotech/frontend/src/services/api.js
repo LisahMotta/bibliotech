@@ -63,4 +63,5 @@ api.interceptors.request.use(
   }
 );
 
+export { api };
 export default api; 

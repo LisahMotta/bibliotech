@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
 import { authService } from './services/api';
-import { api } from './services/api';
+import api from './services/api';
 
 ChartJS.register(
   CategoryScale,
