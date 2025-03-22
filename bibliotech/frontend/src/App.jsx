@@ -208,7 +208,7 @@ const App = () => {
         setMensagemSucesso('Login realizado com sucesso!');
         
         // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         try {
           console.log('Iniciando busca de dados após login...');

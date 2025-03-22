@@ -5,8 +5,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
-  },
-  withCredentials: true // Adiciona suporte para cookies
+  }
 });
 
 const getToken = () => {
@@ -174,13 +173,7 @@ export const authService = {
       console.log('Fazendo requisição GET para:', url);
       console.log('Token atual:', token);
 
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      const response = await api.get(url, config);
+      const response = await api.get(url);
       return response;
     } catch (error) {
       console.error('Erro na requisição GET:', error);
@@ -200,18 +193,10 @@ export const authService = {
         throw new Error('Token não encontrado');
       }
 
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      };
-
       console.log('Fazendo requisição POST para:', url);
-      console.log('Headers da requisição:', config.headers);
+      console.log('Headers da requisição:', api.defaults.headers);
 
-      const response = await api.post(url, data, config);
+      const response = await api.post(url, data);
       return response;
     } catch (error) {
       console.error('Erro na requisição POST:', error);
@@ -230,7 +215,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      config.withCredentials = true;
       console.log('Requisição para:', config.url);
       console.log('Headers da requisição:', config.headers);
     } else {
