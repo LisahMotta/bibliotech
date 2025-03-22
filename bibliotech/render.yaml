@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bibliotech-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://bethfaria4:Sophi@1018@cluster.kjp3u.mongodb.net/bibliotech?retryWrites=true&w=majority
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+
+  - type: static
+    name: bibliotech-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://bibliotech-backend.onrender.com 
