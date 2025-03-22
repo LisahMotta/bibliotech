@@ -892,6 +892,14 @@ const App = () => {
     }
   };
 
+  // Função para fazer logout
+  const fazerLogout = () => {
+    authService.logout();
+    setUsuarioAtual(null);
+    setMostrarLogin(true);
+    setMensagemSucesso('Logout realizado com sucesso!');
+  };
+
   return (
     <div className="App">
       {mostrarLogin && !usuarioAtual && (
