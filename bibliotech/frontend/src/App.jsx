@@ -208,7 +208,7 @@ const App = () => {
         setMensagemSucesso('Login realizado com sucesso!');
         
         // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
           console.log('Iniciando busca de dados após login...');
@@ -216,11 +216,13 @@ const App = () => {
           const alunosResponse = await authService.get('/api/alunos');
           if (alunosResponse?.data) {
             setAlunos(alunosResponse.data);
+            console.log('Alunos carregados com sucesso');
           }
           
           const livrosResponse = await authService.get('/api/livros');
           if (livrosResponse?.data) {
             setLivros(livrosResponse.data);
+            console.log('Livros carregados com sucesso');
           }
           
           console.log('Dados iniciais carregados com sucesso');

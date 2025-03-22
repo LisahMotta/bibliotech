@@ -69,6 +69,14 @@ export const authService = {
         // Salva os dados do usuário
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
         
+        // Verifica se o token foi configurado corretamente
+        const tokenConfigurado = localStorage.getItem('token');
+        console.log('Token configurado no localStorage:', tokenConfigurado);
+        
+        if (!tokenConfigurado) {
+          throw new Error('Erro ao configurar o token');
+        }
+        
         return response.data;
       } else {
         throw new Error('Token não recebido do servidor');
@@ -76,6 +84,7 @@ export const authService = {
     } catch (error) {
       console.error('Erro detalhado no login:', error.response || error);
       setAuthToken(null);
+      localStorage.removeItem('usuarioAtual');
       throw error.response?.data || { message: 'Erro ao fazer login' };
     }
   },
@@ -164,12 +173,19 @@ export const authService = {
       console.log('Fazendo requisição GET para:', url);
       console.log('Token atual:', token);
 
-      const response = await api.get(url);
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      const response = await api.get(url, config);
       return response;
     } catch (error) {
       console.error('Erro na requisição GET:', error);
       if (error.response?.status === 401) {
         setAuthToken(null);
+        localStorage.removeItem('usuarioAtual');
         window.dispatchEvent(new Event('authError'));
       }
       throw error;
