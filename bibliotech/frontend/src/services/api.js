@@ -12,7 +12,7 @@ export const authService = {
   login: async (email, senha) => {
     try {
       const response = await api.post('/api/auth/login', { email, senha });
-      if (response.data) {
+      if (response.data && response.data.token) {
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
       }
       return response.data;
@@ -72,9 +72,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Limpa o token e redireciona para o login
-      localStorage.removeItem('usuarioAtual');
-      window.location.reload();
+      // Limpa o token e redireciona para o login apenas se não estiver na página de login
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login')) {
+        localStorage.removeItem('usuarioAtual');
+        window.location.reload();
+      }
     }
     return Promise.reject(error);
   }

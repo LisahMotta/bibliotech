@@ -779,7 +779,7 @@ const App = () => {
     
     try {
       const response = await authService.login(formLogin.email, formLogin.senha);
-      if (response.token) {
+      if (response && response.token) {
         setUsuarioAtual(response);
         setMostrarLogin(false);
         
@@ -790,9 +790,10 @@ const App = () => {
         await buscarAlunos();
         await buscarLivros();
       } else {
-        setMensagemErro('Token não recebido do servidor');
+        setMensagemErro('Resposta inválida do servidor');
       }
     } catch (error) {
+      console.error('Erro no login:', error);
       setMensagemErro(error.message || 'Email ou senha incorretos');
     }
   };
