@@ -140,11 +140,13 @@ const App = () => {
     try {
       console.log('Buscando alunos...');
       const response = await authService.get('/api/alunos');
-      console.log('Resposta da busca de alunos:', response);
       
-      if (response.data) {
+      if (response?.data) {
         console.log('Alunos recebidos:', response.data);
         setAlunos(response.data);
+      } else {
+        console.error('Resposta inválida ao buscar alunos');
+        throw new Error('Resposta inválida do servidor');
       }
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
@@ -154,6 +156,8 @@ const App = () => {
         authService.logout();
         setUsuarioAtual(null);
         setMostrarLogin(true);
+      } else {
+        setMensagemErro('Erro ao carregar lista de alunos. Por favor, tente novamente.');
       }
       throw error;
     }
@@ -164,11 +168,13 @@ const App = () => {
     try {
       console.log('Buscando livros...');
       const response = await authService.get('/api/livros');
-      console.log('Resposta da busca de livros:', response);
       
-      if (response.data) {
+      if (response?.data) {
         console.log('Livros recebidos:', response.data);
         setLivros(response.data);
+      } else {
+        console.error('Resposta inválida ao buscar livros');
+        throw new Error('Resposta inválida do servidor');
       }
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
@@ -178,6 +184,8 @@ const App = () => {
         authService.logout();
         setUsuarioAtual(null);
         setMostrarLogin(true);
+      } else {
+        setMensagemErro('Erro ao carregar lista de livros. Por favor, tente novamente.');
       }
       throw error;
     }
@@ -201,11 +209,8 @@ const App = () => {
         
         try {
           console.log('Iniciando busca de dados após login...');
-          // Busca dados iniciais após login bem-sucedido
-          await Promise.all([
-            buscarAlunos(),
-            buscarLivros()
-          ]);
+          await buscarAlunos();
+          await buscarLivros();
           console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
           console.error('Erro ao buscar dados iniciais após login:', error);
@@ -242,10 +247,8 @@ const App = () => {
         
         try {
           console.log('Iniciando busca de dados após verificação...');
-          await Promise.all([
-            buscarAlunos(),
-            buscarLivros()
-          ]);
+          await buscarAlunos();
+          await buscarLivros();
           console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
           console.error('Erro ao buscar dados iniciais:', error);
