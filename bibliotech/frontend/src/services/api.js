@@ -8,22 +8,41 @@ const api = axios.create({
   }
 });
 
+const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('token', token);
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('token');
+  }
+};
+
 export const authService = {
   login: async (email, senha) => {
     try {
       console.log('Tentando fazer login com:', { email });
+      
+      // Limpa qualquer token anterior
+      setAuthToken(null);
+      
       const response = await api.post('/api/auth/login', { email, senha });
       console.log('Resposta do login:', response.data);
       
       if (response.data && response.data.token) {
+        // Configura o token
+        setAuthToken(response.data.token);
+        
+        // Salva os dados do usuário
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
         return response.data;
       } else {
         throw new Error('Token não recebido do servidor');
       }
     } catch (error) {
       console.error('Erro detalhado no login:', error.response || error);
+      setAuthToken(null);
       if (error.response?.data) {
         throw error.response.data;
       } else {
@@ -55,24 +74,37 @@ export const authService = {
   },
 
   logout: () => {
+    setAuthToken(null);
     localStorage.removeItem('usuarioAtual');
-    delete api.defaults.headers.common['Authorization'];
+  },
+
+  checkAuth: () => {
+    const token = localStorage.getItem('token');
+    const usuarioAtual = localStorage.getItem('usuarioAtual');
+    
+    if (token && usuarioAtual) {
+      try {
+        const usuario = JSON.parse(usuarioAtual);
+        setAuthToken(token);
+        return usuario;
+      } catch (error) {
+        console.error('Erro ao processar dados do usuário:', error);
+        setAuthToken(null);
+        return null;
+      }
+    }
+    return null;
   }
 };
 
 // Interceptor para adicionar token de autenticação
 api.interceptors.request.use(
   (config) => {
-    try {
-      const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
-      if (usuarioAtual.token) {
-        config.headers.Authorization = `Bearer ${usuarioAtual.token}`;
-      }
-      return config;
-    } catch (error) {
-      console.error('Erro ao processar token:', error);
-      return config;
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
   },
   (error) => {
     return Promise.reject(error);
@@ -89,8 +121,8 @@ api.interceptors.response.use(
       const isLoginRequest = error.config.url.includes('/api/auth/login');
       
       if (!isLoginRequest) {
+        setAuthToken(null);
         localStorage.removeItem('usuarioAtual');
-        delete api.defaults.headers.common['Authorization'];
         window.dispatchEvent(new Event('authError'));
       }
     }
@@ -99,15 +131,9 @@ api.interceptors.response.use(
 );
 
 // Inicializa o token se existir no localStorage
-try {
-  const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
-  if (usuarioAtual.token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${usuarioAtual.token}`;
-  }
-} catch (error) {
-  console.error('Erro ao inicializar token:', error);
-  localStorage.removeItem('usuarioAtual');
-  delete api.defaults.headers.common['Authorization'];
+const token = localStorage.getItem('token');
+if (token) {
+  setAuthToken(token);
 }
 
 export { api };

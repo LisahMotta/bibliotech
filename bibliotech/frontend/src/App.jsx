@@ -147,38 +147,15 @@ const App = () => {
       console.log('Resposta do login:', response);
       
       if (response && response.token) {
-        // Configura o token nos headers do axios
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
-        
-        // Atualiza o estado do usuário
         setUsuarioAtual(response);
         setMostrarLogin(false);
         setMensagemSucesso('Login realizado com sucesso!');
         
         // Busca dados iniciais após login bem-sucedido
-        try {
-          const [alunosResponse, livrosResponse] = await Promise.all([
-            api.get('/api/alunos'),
-            api.get('/api/livros')
-          ]);
-          
-          if (alunosResponse.data) {
-            setAlunos(alunosResponse.data);
-          }
-          
-          if (livrosResponse.data) {
-            setLivros(livrosResponse.data);
-          }
-        } catch (error) {
-          console.error('Erro ao buscar dados iniciais:', error);
-          if (error.response?.status === 401) {
-            setMensagemErro('Erro de autenticação ao buscar dados. Por favor, faça login novamente.');
-            setUsuarioAtual(null);
-            setMostrarLogin(true);
-            localStorage.removeItem('usuarioAtual');
-            delete api.defaults.headers.common['Authorization'];
-          }
-        }
+        await Promise.all([
+          buscarAlunos(),
+          buscarLivros()
+        ]);
       } else {
         setMensagemErro('Resposta inválida do servidor');
         setUsuarioAtual(null);
@@ -193,60 +170,28 @@ const App = () => {
   // Atualizar o useEffect de verificação de usuário
   useEffect(() => {
     const verificarUsuario = async () => {
-      const usuarioSalvo = localStorage.getItem('usuarioAtual');
-      if (usuarioSalvo) {
+      const usuario = authService.checkAuth();
+      if (usuario) {
+        console.log('Usuário autenticado encontrado:', usuario);
+        setUsuarioAtual(usuario);
+        setMostrarLogin(false);
+        
         try {
-          const usuario = JSON.parse(usuarioSalvo);
-          console.log('Verificando usuário salvo:', usuario);
-          
-          if (usuario && usuario.token) {
-            // Configura o token nos headers do axios
-            api.defaults.headers.common['Authorization'] = `Bearer ${usuario.token}`;
-            
-            // Atualiza o estado do usuário
-            setUsuarioAtual(usuario);
-            setMostrarLogin(false);
-            
-            // Busca dados iniciais
-            try {
-              const [alunosResponse, livrosResponse] = await Promise.all([
-                api.get('/api/alunos'),
-                api.get('/api/livros')
-              ]);
-              
-              if (alunosResponse.data) {
-                setAlunos(alunosResponse.data);
-              }
-              
-              if (livrosResponse.data) {
-                setLivros(livrosResponse.data);
-              }
-            } catch (error) {
-              console.error('Erro ao buscar dados iniciais:', error);
-              if (error.response?.status === 401) {
-                setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-                setUsuarioAtual(null);
-                setMostrarLogin(true);
-                localStorage.removeItem('usuarioAtual');
-                delete api.defaults.headers.common['Authorization'];
-              }
-            }
-          } else {
-            console.log('Token não encontrado no usuário salvo');
-            localStorage.removeItem('usuarioAtual');
-            delete api.defaults.headers.common['Authorization'];
+          await Promise.all([
+            buscarAlunos(),
+            buscarLivros()
+          ]);
+        } catch (error) {
+          console.error('Erro ao buscar dados iniciais:', error);
+          if (error.response?.status === 401) {
+            setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+            authService.logout();
             setUsuarioAtual(null);
             setMostrarLogin(true);
           }
-        } catch (error) {
-          console.error('Erro ao processar usuário salvo:', error);
-          localStorage.removeItem('usuarioAtual');
-          delete api.defaults.headers.common['Authorization'];
-          setUsuarioAtual(null);
-          setMostrarLogin(true);
         }
       } else {
-        console.log('Nenhum usuário salvo encontrado');
+        console.log('Nenhum usuário autenticado encontrado');
         setMostrarLogin(true);
       }
     };
@@ -254,32 +199,24 @@ const App = () => {
     verificarUsuario();
   }, []);
 
-  // Adicionar useEffect para lidar com erros de autenticação
-  useEffect(() => {
-    const handleAuthError = () => {
-      setUsuarioAtual(null);
-      setMostrarLogin(true);
-      setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-    };
-
-    window.addEventListener('authError', handleAuthError);
-    return () => window.removeEventListener('authError', handleAuthError);
-  }, []);
-
   // Função para buscar alunos do backend
   const buscarAlunos = async () => {
     try {
+      console.log('Buscando alunos...');
       const response = await api.get('/api/alunos');
       if (response.data) {
+        console.log('Alunos recebidos:', response.data);
         setAlunos(response.data);
       }
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
       if (error.response?.status === 401) {
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
         setUsuarioAtual(null);
+        setMostrarLogin(true);
       } else {
-        alert('Erro ao carregar lista de alunos');
+        throw error;
       }
     }
   };
@@ -287,28 +224,31 @@ const App = () => {
   // Função para buscar livros do backend
   const buscarLivros = async () => {
     try {
+      console.log('Buscando livros...');
       const response = await api.get('/api/livros');
       if (response.data) {
+        console.log('Livros recebidos:', response.data);
         setLivros(response.data);
       }
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
       if (error.response?.status === 401) {
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
         setUsuarioAtual(null);
+        setMostrarLogin(true);
       } else {
-        alert('Erro ao carregar lista de livros');
+        throw error;
       }
     }
   };
 
-  // Carregar alunos e livros ao iniciar
-  useEffect(() => {
-    if (usuarioAtual) {
-      buscarAlunos();
-      buscarLivros();
-    }
-  }, [usuarioAtual]);
+  // Função para fazer logout
+  const fazerLogout = () => {
+    authService.logout();
+    setUsuarioAtual(null);
+    setMostrarLogin(true);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -923,13 +863,6 @@ const App = () => {
     } catch (error) {
       setMensagemErro(error.message || 'Erro ao recuperar senha');
     }
-  };
-
-  // Função para fazer logout
-  const fazerLogout = () => {
-    setUsuarioAtual(null);
-    setMostrarLogin(true);
-    localStorage.removeItem('usuarioAtual');
   };
 
   return (
