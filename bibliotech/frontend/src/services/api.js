@@ -5,7 +5,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
-  }
+  },
+  withCredentials: true // Adiciona suporte para cookies
 });
 
 const getToken = () => {
@@ -201,8 +202,10 @@ export const authService = {
 
       const config = {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
       };
 
       console.log('Fazendo requisição POST para:', url);
@@ -227,6 +230,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      config.withCredentials = true;
       console.log('Requisição para:', config.url);
       console.log('Headers da requisição:', config.headers);
     } else {

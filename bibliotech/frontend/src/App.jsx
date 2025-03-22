@@ -439,16 +439,28 @@ const App = () => {
             alert(`Atenção: ${alunosImportados.length - alunosValidos.length} alunos foram ignorados por falta de dados obrigatórios.`);
           }
 
-          // Enviar para o backend usando o serviço de API
-          const response = await api.post('/api/alunos/importar', alunosValidos);
-          
-          if (response.data) {
-            alert(`${response.data.resultado.sucesso.length} alunos importados com sucesso!`);
+          try {
+            // Enviar para o backend usando o serviço de API
+            const response = await authService.post('/api/alunos/importar', alunosValidos);
             
-            // Atualizar a lista de alunos
-            const alunosResponse = await api.get('/api/alunos');
-            if (alunosResponse.data) {
-              setAlunos(alunosResponse.data);
+            if (response.data) {
+              alert(`${response.data.resultado.sucesso.length} alunos importados com sucesso!`);
+              
+              // Atualizar a lista de alunos
+              const alunosResponse = await authService.get('/api/alunos');
+              if (alunosResponse.data) {
+                setAlunos(alunosResponse.data);
+              }
+            }
+          } catch (error) {
+            console.error('Erro ao enviar dados para o servidor:', error);
+            if (error.response?.status === 401) {
+              setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+              authService.logout();
+              setUsuarioAtual(null);
+              setMostrarLogin(true);
+            } else {
+              alert('Erro ao enviar dados para o servidor. Verifique se o arquivo está no formato correto.');
             }
           }
           
@@ -457,8 +469,7 @@ const App = () => {
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          const mensagemErro = error.response?.data?.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.';
-          alert(mensagemErro);
+          alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
         }
       };
       reader.readAsArrayBuffer(file);
