@@ -12,11 +12,13 @@ app.use(cors());
 const alunoRoutes = require('./routes/alunos');
 const livroRoutes = require('./routes/livros');
 const emprestimoRoutes = require('./routes/emprestimos');
+const authRoutes = require('./routes/auth');
 
 // Uso das rotas
 app.use('/alunos', alunoRoutes);
 app.use('/livros', livroRoutes);
 app.use('/emprestimos', emprestimoRoutes);
+app.use('/api/auth', authRoutes);
 
 // Conexão com o banco
 mongoose.connect(process.env.MONGODB_URI, {
@@ -27,7 +29,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
 
 // Início do servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
