@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Livro = require('../models/Livro');
+const { auth } = require('../middlewares/auth');
 
 // Listar todos os livros
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     try {
         const livros = await Livro.find().sort({ titulo: 1 });
         res.json(livros);
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Criar novo livro
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
     try {
         const livro = new Livro({
             titulo: req.body.titulo,
@@ -33,7 +34,7 @@ router.post('/', async (req, res) => {
 });
 
 // Importar múltiplos livros
-router.post('/importar', async (req, res) => {
+router.post('/importar', auth, async (req, res) => {
     try {
         const livros = req.body;
         if (!Array.isArray(livros)) {
@@ -72,7 +73,7 @@ router.post('/importar', async (req, res) => {
 });
 
 // Buscar livro por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
     try {
         const livro = await Livro.findById(req.params.id);
         if (livro) {
@@ -87,7 +88,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Atualizar livro
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
     try {
         const livro = await Livro.findById(req.params.id);
         if (!livro) {
@@ -111,7 +112,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Deletar livro
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
     try {
         const livro = await Livro.findById(req.params.id);
         if (livro) {

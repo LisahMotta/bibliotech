@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Emprestimo = require('../models/Emprestimo');
+const { auth } = require('../middlewares/auth');
 
 // Criar um empréstimo
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
     try {
         const novoEmprestimo = new Emprestimo(req.body);
         await novoEmprestimo.save();
@@ -14,7 +15,7 @@ router.post('/', async (req, res) => {
 });
 
 // Listar todos os empréstimos
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     const emprestimos = await Emprestimo.find().populate('aluno_id livro_id');
     res.json(emprestimos);
 });

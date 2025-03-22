@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Aluno = require('../models/Aluno');
+const { auth } = require('../middlewares/auth');
 
 // Listar todos os alunos
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
     try {
         const alunos = await Aluno.find().sort({ nome: 1 });
         res.json(alunos);
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Criar novo aluno
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
     try {
         // Verifica se a matrícula já existe
         const matriculaExiste = await Aluno.findOne({ matricula: req.body.matricula });
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
 });
 
 // Importar múltiplos alunos
-router.post('/importar', async (req, res) => {
+router.post('/importar', auth, async (req, res) => {
     try {
         const alunos = req.body;
         if (!Array.isArray(alunos)) {
@@ -100,7 +101,7 @@ router.post('/importar', async (req, res) => {
 });
 
 // Buscar aluno por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
     try {
         const aluno = await Aluno.findById(req.params.id);
         if (aluno) {
@@ -115,7 +116,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Atualizar aluno
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
     try {
         const aluno = await Aluno.findById(req.params.id);
         if (!aluno) {
@@ -152,7 +153,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Deletar aluno
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
     try {
         const aluno = await Aluno.findById(req.params.id);
         if (aluno) {

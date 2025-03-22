@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // Middleware para validar dados do usuário
 const validateUserData = (req, res, next) => {
@@ -91,13 +92,21 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email ou senha incorretos' });
     }
 
+    // Gera o token JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email, funcao: user.funcao },
+      process.env.JWT_SECRET || 'sua_chave_secreta',
+      { expiresIn: '24h' }
+    );
+
     console.log('Login realizado com sucesso:', user._id);
 
     res.json({
       id: user._id,
       nome: user.nome,
       email: user.email,
-      funcao: user.funcao
+      funcao: user.funcao,
+      token
     });
   } catch (error) {
     console.error('Erro ao fazer login:', error);

@@ -339,7 +339,18 @@ const App = () => {
           alert(`${resultado.resultado.sucesso.length} alunos importados com sucesso!`);
           
           // Atualizar a lista de alunos
-          buscarAlunos();
+          const alunosResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/alunos`, {
+            headers: {
+              'Authorization': `Bearer ${JSON.parse(localStorage.getItem('usuarioAtual')).token}`
+            }
+          });
+          
+          if (!alunosResponse.ok) {
+            throw new Error('Erro ao buscar alunos');
+          }
+          
+          const alunosData = await alunosResponse.json();
+          setAlunos(alunosData);
           
           if (fileInputAlunoRef.current) {
             fileInputAlunoRef.current.value = '';
@@ -1237,14 +1248,16 @@ const App = () => {
                         <th>Nome</th>
                         <th>RA</th>
                         <th>Série</th>
+                        <th>Email</th>
                       </tr>
                     </thead>
                     <tbody>
                       {alunos.map(aluno => (
-                        <tr key={aluno.id}>
+                        <tr key={aluno._id}>
                           <td>{aluno.nome}</td>
-                          <td>{aluno.ra}</td>
-                          <td>{aluno.serie}</td>
+                          <td>{aluno.matricula}</td>
+                          <td>{aluno.curso}</td>
+                          <td>{aluno.email}</td>
                         </tr>
                       ))}
                     </tbody>
