@@ -305,16 +305,15 @@ const App = () => {
           const alunosImportados = jsonData.map(item => ({
             nome: item.nome || item.Nome || item.NOME || '',
             matricula: item.ra || item.RA || item.Ra || '',
-            curso: item.serie || item.Série || item.SERIE || '',
-            email: item.email || item.Email || item.EMAIL || ''
+            curso: item.serie || item.Série || item.SERIE || ''
           }));
 
           const alunosValidos = alunosImportados.filter(aluno => 
-            aluno.nome && aluno.matricula && aluno.curso && aluno.email
+            aluno.nome && aluno.matricula && aluno.curso
           );
 
           if (alunosValidos.length === 0) {
-            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA, série e email.');
+            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA e série.');
             return;
           }
 

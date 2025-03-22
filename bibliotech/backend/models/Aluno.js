@@ -17,14 +17,6 @@ const alunoSchema = new mongoose.Schema({
         required: [true, 'O curso é obrigatório'],
         trim: true
     },
-    email: {
-        type: String,
-        required: [true, 'O email é obrigatório'],
-        unique: true,
-        trim: true,
-        lowercase: true,
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Email inválido']
-    },
     dataCriacao: {
         type: Date,
         default: Date.now
