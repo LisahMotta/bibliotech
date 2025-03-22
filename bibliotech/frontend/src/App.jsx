@@ -12,6 +12,7 @@ import {
   ArcElement
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
+import { authService } from './services/api';
 
 ChartJS.register(
   CategoryScale,
@@ -132,6 +133,15 @@ const App = () => {
 
     return () => clearInterval(intervalo);
   }, [emprestimos]);
+
+  // Verificar se há usuário logado ao carregar a página
+  useEffect(() => {
+    const usuarioSalvo = localStorage.getItem('usuarioAtual');
+    if (usuarioSalvo) {
+      setUsuarioAtual(JSON.parse(usuarioSalvo));
+      setMostrarLogin(false);
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -677,101 +687,60 @@ const App = () => {
     }
   };
 
-  // Função para gerar senha numérica de 6 dígitos não sequenciais
-  const gerarSenha = () => {
-    const numeros = Array.from({length: 10}, (_, i) => i);
-    let senha = '';
-    for (let i = 0; i < 6; i++) {
-      const indice = Math.floor(Math.random() * numeros.length);
-      senha += numeros[indice];
-    }
-    return senha;
-  };
-
-  // Função para validar senha
-  const validarSenha = (senha) => {
-    if (senha.length !== 6) return false;
-    if (!/^\d+$/.test(senha)) return false;
-    if (/(012|123|234|345|456|567|678|789)/.test(senha)) return false;
-    return true;
-  };
-
   // Função para cadastrar novo usuário
-  const cadastrarUsuario = (e) => {
+  const cadastrarUsuario = async (e) => {
     e.preventDefault();
     setMensagemErro('');
     setMensagemSucesso('');
 
-    if (!validarSenha(novoUsuario.senha)) {
-      setMensagemErro('A senha deve ter 6 dígitos numéricos não sequenciais');
-      return;
+    try {
+      const response = await authService.register(novoUsuario);
+      setMensagemSucesso('Usuário cadastrado com sucesso!');
+      setMostrarCadastro(false);
+      setMostrarLogin(true);
+      setNovoUsuario({
+        nome: '',
+        email: '',
+        senha: '',
+        confirmarSenha: '',
+        funcao: ''
+      });
+    } catch (error) {
+      setMensagemErro(error.message || 'Erro ao cadastrar usuário');
     }
-
-    if (novoUsuario.senha !== novoUsuario.confirmarSenha) {
-      setMensagemErro('As senhas não coincidem');
-      return;
-    }
-
-    if (usuarios.some(u => u.email === novoUsuario.email)) {
-      setMensagemErro('Este email já está cadastrado');
-      return;
-    }
-
-    const novoUsuarioCompleto = {
-      id: Date.now(),
-      ...novoUsuario,
-      senha: novoUsuario.senha // Em produção, deve-se usar hash da senha
-    };
-
-    setUsuarios(prev => [...prev, novoUsuarioCompleto]);
-    setMensagemSucesso('Usuário cadastrado com sucesso!');
-    setMostrarCadastro(false);
-    setMostrarLogin(true);
-    setNovoUsuario({
-      nome: '',
-      email: '',
-      senha: '',
-      confirmarSenha: '',
-      funcao: ''
-    });
   };
 
   // Função para fazer login
-  const fazerLogin = (e) => {
+  const fazerLogin = async (e) => {
     e.preventDefault();
     setMensagemErro('');
     
-    const usuario = usuarios.find(u => 
-      u.email === formLogin.email && u.senha === formLogin.senha
-    );
-
-    if (usuario) {
-      setUsuarioAtual(usuario);
+    try {
+      const response = await authService.login(formLogin.email, formLogin.senha);
+      setUsuarioAtual(response);
       setMostrarLogin(false);
-    } else {
-      setMensagemErro('Email ou senha incorretos');
+      
+      // Salva os dados do usuário no localStorage
+      localStorage.setItem('usuarioAtual', JSON.stringify(response));
+    } catch (error) {
+      setMensagemErro(error.message || 'Email ou senha incorretos');
     }
   };
 
   // Função para recuperar senha
-  const recuperarSenha = (e) => {
+  const recuperarSenha = async (e) => {
     e.preventDefault();
     setMensagemErro('');
     setMensagemSucesso('');
 
-    const usuario = usuarios.find(u => u.email === emailRecuperacao);
-    
-    if (usuario) {
-      const novaSenha = gerarSenha();
-      setUsuarios(prev => prev.map(u => 
-        u.id === usuario.id ? { ...u, senha: novaSenha } : u
-      ));
-      setMensagemSucesso(`Nova senha gerada: ${novaSenha}. Em produção, esta senha seria enviada por email.`);
+    try {
+      const response = await authService.recuperarSenha(emailRecuperacao);
+      setMensagemSucesso(`Nova senha gerada: ${response.novaSenha}. Em produção, esta senha seria enviada por email.`);
       setMostrarRecuperarSenha(false);
       setMostrarLogin(true);
       setEmailRecuperacao('');
-    } else {
-      setMensagemErro('Email não encontrado');
+    } catch (error) {
+      setMensagemErro(error.message || 'Erro ao recuperar senha');
     }
   };
 
@@ -779,6 +748,7 @@ const App = () => {
   const fazerLogout = () => {
     setUsuarioAtual(null);
     setMostrarLogin(true);
+    localStorage.removeItem('usuarioAtual');
   };
 
   return (
