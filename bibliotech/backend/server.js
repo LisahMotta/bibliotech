@@ -1,42 +1,38 @@
 const express = require('express');
-const app = express();
-const mongoose = require('mongoose');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
+const app = express();
+
 // Middlewares
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
-// Importação das rotas
-const alunoRoutes = require('./routes/alunos');
-const livroRoutes = require('./routes/livros');
-const emprestimoRoutes = require('./routes/emprestimos');
+// Importar rotas
 const authRoutes = require('./routes/auth');
+const livroRoutes = require('./routes/livros');
+const alunoRoutes = require('./routes/alunos');
+const emprestimoRoutes = require('./routes/emprestimos');
 
-// Uso das rotas
-app.use('/api/alunos', alunoRoutes);
-app.use('/api/livros', livroRoutes);
-app.use('/api/emprestimos', emprestimoRoutes);
+// Usar rotas
 app.use('/api/auth', authRoutes);
-
-// Conexão com o banco
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("MongoDB conectado com sucesso!"))
-.catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
+app.use('/api/livros', livroRoutes);
+app.use('/api/alunos', alunoRoutes);
+app.use('/api/emprestimos', emprestimoRoutes);
 
 // Rota de teste
 app.get('/', (req, res) => {
-  res.json({ message: 'API BiblioTech funcionando!' });
+  res.json({ message: 'API está funcionando!' });
 });
 
-// Início do servidor
-const PORT = process.env.PORT || 5000;
-const HOST = '0.0.0.0';
+// Conectar ao MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Conectado ao MongoDB'))
+  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
-app.listen(PORT, HOST, () => {
-  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+// Iniciar servidor
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
