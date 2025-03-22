@@ -135,26 +135,50 @@ const App = () => {
     return () => clearInterval(intervalo);
   }, [emprestimos]);
 
-  // Verificar se há usuário logado ao carregar a página
+  // Atualizar o useEffect de verificação de usuário
   useEffect(() => {
-    const usuarioSalvo = localStorage.getItem('usuarioAtual');
-    if (usuarioSalvo) {
-      try {
-        const usuario = JSON.parse(usuarioSalvo);
-        if (usuario.token) {
-          setUsuarioAtual(usuario);
-          setMostrarLogin(false);
-          // Busca dados iniciais
-          buscarAlunos();
-          buscarLivros();
-        } else {
+    const verificarUsuario = async () => {
+      const usuarioSalvo = localStorage.getItem('usuarioAtual');
+      if (usuarioSalvo) {
+        try {
+          const usuario = JSON.parse(usuarioSalvo);
+          console.log('Verificando usuário salvo:', usuario);
+          
+          if (usuario && usuario.token) {
+            setUsuarioAtual(usuario);
+            setMostrarLogin(false);
+            
+            // Busca dados iniciais
+            try {
+              await buscarAlunos();
+              await buscarLivros();
+            } catch (error) {
+              console.error('Erro ao buscar dados iniciais:', error);
+              if (error.response?.status === 401) {
+                setUsuarioAtual(null);
+                setMostrarLogin(true);
+                localStorage.removeItem('usuarioAtual');
+              }
+            }
+          } else {
+            console.log('Token não encontrado no usuário salvo');
+            localStorage.removeItem('usuarioAtual');
+            setUsuarioAtual(null);
+            setMostrarLogin(true);
+          }
+        } catch (error) {
+          console.error('Erro ao processar usuário salvo:', error);
           localStorage.removeItem('usuarioAtual');
+          setUsuarioAtual(null);
+          setMostrarLogin(true);
         }
-      } catch (error) {
-        console.error('Erro ao processar usuário salvo:', error);
-        localStorage.removeItem('usuarioAtual');
+      } else {
+        console.log('Nenhum usuário salvo encontrado');
+        setMostrarLogin(true);
       }
-    }
+    };
+
+    verificarUsuario();
   }, []);
 
   // Adicionar useEffect para lidar com erros de autenticação
@@ -181,7 +205,6 @@ const App = () => {
       if (error.response?.status === 401) {
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
         setUsuarioAtual(null);
-        setMostrarLogin(true);
       } else {
         alert('Erro ao carregar lista de alunos');
       }
@@ -200,7 +223,6 @@ const App = () => {
       if (error.response?.status === 401) {
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
         setUsuarioAtual(null);
-        setMostrarLogin(true);
       } else {
         alert('Erro ao carregar lista de livros');
       }
@@ -817,23 +839,33 @@ const App = () => {
   const fazerLogin = async (e) => {
     e.preventDefault();
     setMensagemErro('');
+    setMensagemSucesso('');
     
     try {
+      console.log('Tentando fazer login...');
       const response = await authService.login(formLogin.email, formLogin.senha);
+      console.log('Resposta do login:', response);
+      
       if (response && response.token) {
         setUsuarioAtual(response);
         setMostrarLogin(false);
-        setMensagemErro('');
+        setMensagemSucesso('Login realizado com sucesso!');
         
-        // Busca dados iniciais
-        await buscarAlunos();
-        await buscarLivros();
+        // Busca dados iniciais após login bem-sucedido
+        try {
+          await buscarAlunos();
+          await buscarLivros();
+        } catch (error) {
+          console.error('Erro ao buscar dados iniciais:', error);
+        }
       } else {
         setMensagemErro('Resposta inválida do servidor');
+        setUsuarioAtual(null);
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro ao fazer login:', error);
       setMensagemErro(error.message || 'Email ou senha incorretos');
+      setUsuarioAtual(null);
     }
   };
 

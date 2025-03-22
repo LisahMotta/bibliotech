@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: 'https://bibliotech-kv95.onrender.com',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -11,16 +11,24 @@ const api = axios.create({
 export const authService = {
   login: async (email, senha) => {
     try {
+      console.log('Tentando fazer login com:', { email });
       const response = await api.post('/api/auth/login', { email, senha });
+      console.log('Resposta do login:', response.data);
+      
       if (response.data && response.data.token) {
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
-        // Configura o token após o login bem-sucedido
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        return response.data;
+      } else {
+        throw new Error('Token não recebido do servidor');
       }
-      return response.data;
     } catch (error) {
-      console.error('Erro no login:', error.response?.data || error.message);
-      throw error.response?.data || { message: 'Erro ao fazer login' };
+      console.error('Erro detalhado no login:', error.response || error);
+      if (error.response?.data) {
+        throw error.response.data;
+      } else {
+        throw { message: 'Erro ao conectar com o servidor' };
+      }
     }
   },
 
@@ -74,17 +82,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('Erro na resposta:', error.response || error);
+    
     if (error.response?.status === 401) {
-      // Verifica se a requisição é para a rota de login
       const isLoginRequest = error.config.url.includes('/api/auth/login');
       
-      // Se não for uma requisição de login e houver um token, limpa o token
       if (!isLoginRequest) {
         const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
         if (usuarioAtual.token) {
           localStorage.removeItem('usuarioAtual');
           delete api.defaults.headers.common['Authorization'];
-          // Dispara um evento customizado para notificar o App.jsx
           window.dispatchEvent(new Event('authError'));
         }
       }
@@ -94,9 +101,14 @@ api.interceptors.response.use(
 );
 
 // Inicializa o token se existir no localStorage
-const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
-if (usuarioAtual.token) {
-  api.defaults.headers.common['Authorization'] = `Bearer ${usuarioAtual.token}`;
+try {
+  const usuarioAtual = JSON.parse(localStorage.getItem('usuarioAtual') || '{}');
+  if (usuarioAtual.token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${usuarioAtual.token}`;
+  }
+} catch (error) {
+  console.error('Erro ao inicializar token:', error);
+  localStorage.removeItem('usuarioAtual');
 }
 
 export { api };
