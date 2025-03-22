@@ -309,7 +309,7 @@ const App = () => {
           }));
 
           const alunosValidos = alunosImportados.filter(aluno => 
-            aluno.nome && aluno.matricula && aluno.curso
+            aluno.nome && aluno.matricula && aluno.curso && aluno.email
           );
 
           if (alunosValidos.length === 0) {
@@ -332,7 +332,8 @@ const App = () => {
           });
 
           if (!response.ok) {
-            throw new Error('Erro ao importar alunos');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro ao importar alunos');
           }
 
           const resultado = await response.json();
@@ -357,7 +358,7 @@ const App = () => {
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+          alert(error.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
         }
       };
       reader.readAsArrayBuffer(file);

@@ -1,23 +1,29 @@
 const mongoose = require('mongoose');
 
-const AlunoSchema = new mongoose.Schema({
+const alunoSchema = new mongoose.Schema({
     nome: {
         type: String,
-        required: true
+        required: [true, 'O nome é obrigatório'],
+        trim: true
     },
     matricula: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'A matrícula é obrigatória'],
+        unique: true,
+        trim: true
     },
     curso: {
         type: String,
-        required: true
+        required: [true, 'O curso é obrigatório'],
+        trim: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        required: [true, 'O email é obrigatório'],
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Email inválido']
     },
     dataCriacao: {
         type: Date,
@@ -25,4 +31,9 @@ const AlunoSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Aluno', AlunoSchema); 
+// Índices para melhorar a performance das buscas
+alunoSchema.index({ nome: 1 });
+alunoSchema.index({ matricula: 1 });
+alunoSchema.index({ curso: 1 });
+
+module.exports = mongoose.model('Aluno', alunoSchema); 
