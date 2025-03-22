@@ -151,11 +151,19 @@ const App = () => {
         setMostrarLogin(false);
         setMensagemSucesso('Login realizado com sucesso!');
         
-        // Busca dados iniciais após login bem-sucedido
-        await Promise.all([
-          buscarAlunos(),
-          buscarLivros()
-        ]);
+        // Aguarda um momento para garantir que o token foi configurado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        try {
+          // Busca dados iniciais após login bem-sucedido
+          await Promise.all([
+            buscarAlunos(),
+            buscarLivros()
+          ]);
+        } catch (error) {
+          console.error('Erro ao buscar dados iniciais após login:', error);
+          setMensagemErro('Erro ao carregar dados. Por favor, tente novamente.');
+        }
       } else {
         setMensagemErro('Resposta inválida do servidor');
         setUsuarioAtual(null);
@@ -176,6 +184,9 @@ const App = () => {
         setUsuarioAtual(usuario);
         setMostrarLogin(false);
         
+        // Aguarda um momento para garantir que o token foi configurado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         try {
           await Promise.all([
             buscarAlunos(),
@@ -184,6 +195,7 @@ const App = () => {
         } catch (error) {
           console.error('Erro ao buscar dados iniciais:', error);
           if (error.response?.status === 401) {
+            console.log('Erro 401 ao buscar dados iniciais. Fazendo logout...');
             setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
             authService.logout();
             setUsuarioAtual(null);
@@ -197,6 +209,17 @@ const App = () => {
     };
 
     verificarUsuario();
+
+    // Adicionar listener para eventos de erro de autenticação
+    const handleAuthError = () => {
+      console.log('Evento de erro de autenticação recebido');
+      setUsuarioAtual(null);
+      setMostrarLogin(true);
+      setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+    };
+
+    window.addEventListener('authError', handleAuthError);
+    return () => window.removeEventListener('authError', handleAuthError);
   }, []);
 
   // Função para buscar alunos do backend
@@ -211,13 +234,13 @@ const App = () => {
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
       if (error.response?.status === 401) {
+        console.log('Erro 401 ao buscar alunos. Fazendo logout...');
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
         authService.logout();
         setUsuarioAtual(null);
         setMostrarLogin(true);
-      } else {
-        throw error;
       }
+      throw error;
     }
   };
 
@@ -233,13 +256,13 @@ const App = () => {
     } catch (error) {
       console.error('Erro ao buscar livros:', error);
       if (error.response?.status === 401) {
+        console.log('Erro 401 ao buscar livros. Fazendo logout...');
         setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
         authService.logout();
         setUsuarioAtual(null);
         setMostrarLogin(true);
-      } else {
-        throw error;
       }
+      throw error;
     }
   };
 

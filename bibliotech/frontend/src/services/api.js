@@ -12,9 +12,11 @@ const setAuthToken = (token) => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     localStorage.setItem('token', token);
+    console.log('Token configurado:', token);
   } else {
     delete api.defaults.headers.common['Authorization'];
     localStorage.removeItem('token');
+    console.log('Token removido');
   }
 };
 
@@ -36,6 +38,9 @@ export const authService = {
         // Salva os dados do usuário
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
         
+        // Configura o token para todas as próximas requisições
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
         return response.data;
       } else {
         throw new Error('Token não recebido do servidor');
@@ -43,11 +48,7 @@ export const authService = {
     } catch (error) {
       console.error('Erro detalhado no login:', error.response || error);
       setAuthToken(null);
-      if (error.response?.data) {
-        throw error.response.data;
-      } else {
-        throw { message: 'Erro ao conectar com o servidor' };
-      }
+      throw error.response?.data || { message: 'Erro ao fazer login' };
     }
   },
 
@@ -76,6 +77,7 @@ export const authService = {
   logout: () => {
     setAuthToken(null);
     localStorage.removeItem('usuarioAtual');
+    delete api.defaults.headers.common['Authorization'];
   },
 
   checkAuth: () => {
@@ -86,6 +88,9 @@ export const authService = {
       try {
         const usuario = JSON.parse(usuarioAtual);
         setAuthToken(token);
+        // Configura o token para todas as próximas requisições
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        console.log('Token recuperado e configurado:', token);
         return usuario;
       } catch (error) {
         console.error('Erro ao processar dados do usuário:', error);
@@ -103,6 +108,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Token adicionado à requisição:', config.url);
     }
     return config;
   },
@@ -121,6 +127,7 @@ api.interceptors.response.use(
       const isLoginRequest = error.config.url.includes('/api/auth/login');
       
       if (!isLoginRequest) {
+        console.log('Erro 401 detectado. Limpando dados de autenticação.');
         setAuthToken(null);
         localStorage.removeItem('usuarioAtual');
         window.dispatchEvent(new Event('authError'));
@@ -133,7 +140,9 @@ api.interceptors.response.use(
 // Inicializa o token se existir no localStorage
 const token = localStorage.getItem('token');
 if (token) {
+  console.log('Inicializando token do localStorage');
   setAuthToken(token);
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
 export { api };
