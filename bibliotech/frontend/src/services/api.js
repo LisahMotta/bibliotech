@@ -8,12 +8,12 @@ const api = axios.create({
   }
 });
 
+// Função para gerenciar o token
 const setAuthToken = (token) => {
   if (token) {
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     console.log('Token configurado:', token);
-    console.log('Headers após configuração:', api.defaults.headers.common);
   } else {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -21,12 +21,39 @@ const setAuthToken = (token) => {
   }
 };
 
+// Função para criar uma nova instância do axios com o token
+const createAuthenticatedApi = (token) => {
+  const authenticatedApi = axios.create({
+    baseURL: 'https://bibliotech-kv95.onrender.com',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  // Adiciona interceptor de resposta para esta instância
+  authenticatedApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        console.log('Erro 401 detectado em requisição autenticada');
+        setAuthToken(null);
+        window.dispatchEvent(new Event('authError'));
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return authenticatedApi;
+};
+
 export const authService = {
   login: async (email, senha) => {
     try {
       console.log('Tentando fazer login com:', { email });
       
-      // Limpa qualquer token anterior
+      // Remove qualquer token anterior
       setAuthToken(null);
       
       const response = await api.post('/api/auth/login', { email, senha });
@@ -38,15 +65,6 @@ export const authService = {
         
         // Salva os dados do usuário
         localStorage.setItem('usuarioAtual', JSON.stringify(response.data));
-        
-        // Verifica se o token foi configurado corretamente
-        const tokenConfigurado = api.defaults.headers.common['Authorization'];
-        console.log('Token configurado após login:', tokenConfigurado);
-        
-        if (!tokenConfigurado) {
-          console.error('Token não foi configurado corretamente');
-          throw new Error('Erro na configuração do token');
-        }
         
         return response.data;
       } else {
@@ -94,17 +112,6 @@ export const authService = {
       try {
         const usuario = JSON.parse(usuarioAtual);
         setAuthToken(token);
-        
-        // Verifica se o token foi configurado corretamente
-        const tokenConfigurado = api.defaults.headers.common['Authorization'];
-        console.log('Token configurado após checkAuth:', tokenConfigurado);
-        
-        if (!tokenConfigurado) {
-          console.error('Token não foi configurado corretamente no checkAuth');
-          setAuthToken(null);
-          return null;
-        }
-        
         return usuario;
       } catch (error) {
         console.error('Erro ao processar dados do usuário:', error);
@@ -113,6 +120,35 @@ export const authService = {
       }
     }
     return null;
+  },
+
+  // Funções auxiliares para requisições autenticadas
+  getAuthenticatedApi: () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Token não encontrado');
+    }
+    return createAuthenticatedApi(token);
+  },
+
+  get: async (url) => {
+    try {
+      const authenticatedApi = authService.getAuthenticatedApi();
+      return await authenticatedApi.get(url);
+    } catch (error) {
+      console.error('Erro na requisição GET:', error);
+      throw error;
+    }
+  },
+
+  post: async (url, data) => {
+    try {
+      const authenticatedApi = authService.getAuthenticatedApi();
+      return await authenticatedApi.post(url, data);
+    } catch (error) {
+      console.error('Erro na requisição POST:', error);
+      throw error;
+    }
   }
 };
 

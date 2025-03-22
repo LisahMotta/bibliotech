@@ -135,6 +135,54 @@ const App = () => {
     return () => clearInterval(intervalo);
   }, [emprestimos]);
 
+  // Função para buscar alunos do backend
+  const buscarAlunos = async () => {
+    try {
+      console.log('Buscando alunos...');
+      const response = await authService.get('/api/alunos');
+      console.log('Resposta da busca de alunos:', response);
+      
+      if (response.data) {
+        console.log('Alunos recebidos:', response.data);
+        setAlunos(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      if (error.response?.status === 401) {
+        console.log('Erro 401 ao buscar alunos. Fazendo logout...');
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      }
+      throw error;
+    }
+  };
+
+  // Função para buscar livros do backend
+  const buscarLivros = async () => {
+    try {
+      console.log('Buscando livros...');
+      const response = await authService.get('/api/livros');
+      console.log('Resposta da busca de livros:', response);
+      
+      if (response.data) {
+        console.log('Livros recebidos:', response.data);
+        setLivros(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar livros:', error);
+      if (error.response?.status === 401) {
+        console.log('Erro 401 ao buscar livros. Fazendo logout...');
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      }
+      throw error;
+    }
+  };
+
   // Modificar a função de login
   const fazerLogin = async (e) => {
     e.preventDefault();
@@ -151,21 +199,12 @@ const App = () => {
         setMostrarLogin(false);
         setMensagemSucesso('Login realizado com sucesso!');
         
-        // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         try {
           console.log('Iniciando busca de dados após login...');
           // Busca dados iniciais após login bem-sucedido
           await Promise.all([
-            buscarAlunos().catch(error => {
-              console.error('Erro ao buscar alunos após login:', error);
-              throw error;
-            }),
-            buscarLivros().catch(error => {
-              console.error('Erro ao buscar livros após login:', error);
-              throw error;
-            })
+            buscarAlunos(),
+            buscarLivros()
           ]);
           console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
@@ -201,20 +240,11 @@ const App = () => {
         setUsuarioAtual(usuario);
         setMostrarLogin(false);
         
-        // Aguarda um momento para garantir que o token foi configurado
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         try {
           console.log('Iniciando busca de dados após verificação...');
           await Promise.all([
-            buscarAlunos().catch(error => {
-              console.error('Erro ao buscar alunos após verificação:', error);
-              throw error;
-            }),
-            buscarLivros().catch(error => {
-              console.error('Erro ao buscar livros após verificação:', error);
-              throw error;
-            })
+            buscarAlunos(),
+            buscarLivros()
           ]);
           console.log('Dados iniciais carregados com sucesso');
         } catch (error) {
@@ -246,67 +276,6 @@ const App = () => {
     window.addEventListener('authError', handleAuthError);
     return () => window.removeEventListener('authError', handleAuthError);
   }, []);
-
-  // Função para buscar alunos do backend
-  const buscarAlunos = async () => {
-    try {
-      console.log('Buscando alunos...');
-      const token = localStorage.getItem('token');
-      console.log('Token atual ao buscar alunos:', token);
-      
-      const response = await api.get('/api/alunos');
-      console.log('Resposta da busca de alunos:', response);
-      
-      if (response.data) {
-        console.log('Alunos recebidos:', response.data);
-        setAlunos(response.data);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar alunos:', error);
-      if (error.response?.status === 401) {
-        console.log('Erro 401 ao buscar alunos. Fazendo logout...');
-        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-        authService.logout();
-        setUsuarioAtual(null);
-        setMostrarLogin(true);
-      }
-      throw error;
-    }
-  };
-
-  // Função para buscar livros do backend
-  const buscarLivros = async () => {
-    try {
-      console.log('Buscando livros...');
-      const token = localStorage.getItem('token');
-      console.log('Token atual ao buscar livros:', token);
-      
-      const response = await api.get('/api/livros');
-      console.log('Resposta da busca de livros:', response);
-      
-      if (response.data) {
-        console.log('Livros recebidos:', response.data);
-        setLivros(response.data);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar livros:', error);
-      if (error.response?.status === 401) {
-        console.log('Erro 401 ao buscar livros. Fazendo logout...');
-        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-        authService.logout();
-        setUsuarioAtual(null);
-        setMostrarLogin(true);
-      }
-      throw error;
-    }
-  };
-
-  // Função para fazer logout
-  const fazerLogout = () => {
-    authService.logout();
-    setUsuarioAtual(null);
-    setMostrarLogin(true);
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
