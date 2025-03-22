@@ -8,7 +8,10 @@ const api = axios.create({
   }
 });
 
-// Função para gerenciar o token
+const getToken = () => {
+  return localStorage.getItem('token');
+};
+
 const setAuthToken = (token) => {
   if (token) {
     localStorage.setItem('token', token);
@@ -80,11 +83,31 @@ export const authService = {
   register: async (userData) => {
     try {
       console.log('Enviando dados para registro:', userData);
+      
+      // Validação dos campos obrigatórios
+      if (!userData.nome || !userData.email || !userData.senha || !userData.funcao) {
+        throw new Error('Todos os campos são obrigatórios');
+      }
+
+      // Validação do formato do email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        throw new Error('Email inválido');
+      }
+
+      // Validação da senha
+      if (userData.senha.length < 6) {
+        throw new Error('A senha deve ter pelo menos 6 caracteres');
+      }
+
       const response = await api.post('/api/auth/register', userData);
       console.log('Resposta do registro:', response.data);
       return response.data;
     } catch (error) {
       console.error('Erro no registro:', error.response?.data || error.message);
+      if (error.response?.status === 400) {
+        throw error.response.data;
+      }
       throw error.response?.data || { message: 'Erro ao cadastrar usuário' };
     }
   },
@@ -105,7 +128,7 @@ export const authService = {
   },
 
   checkAuth: () => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const usuarioAtual = localStorage.getItem('usuarioAtual');
     
     if (token && usuarioAtual) {
@@ -133,20 +156,56 @@ export const authService = {
 
   get: async (url) => {
     try {
-      const authenticatedApi = authService.getAuthenticatedApi();
-      return await authenticatedApi.get(url);
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      console.log('Fazendo requisição GET para:', url);
+      console.log('Headers da requisição:', config.headers);
+
+      const response = await api.get(url, config);
+      return response;
     } catch (error) {
       console.error('Erro na requisição GET:', error);
+      if (error.response?.status === 401) {
+        setAuthToken(null);
+        window.dispatchEvent(new Event('authError'));
+      }
       throw error;
     }
   },
 
   post: async (url, data) => {
     try {
-      const authenticatedApi = authService.getAuthenticatedApi();
-      return await authenticatedApi.post(url, data);
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      console.log('Fazendo requisição POST para:', url);
+      console.log('Headers da requisição:', config.headers);
+
+      const response = await api.post(url, data, config);
+      return response;
     } catch (error) {
       console.error('Erro na requisição POST:', error);
+      if (error.response?.status === 401) {
+        setAuthToken(null);
+        window.dispatchEvent(new Event('authError'));
+      }
       throw error;
     }
   }
@@ -175,8 +234,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Erro na resposta:', error.response || error);
-    
     if (error.response?.status === 401) {
       const isLoginRequest = error.config.url.includes('/api/auth/login');
       

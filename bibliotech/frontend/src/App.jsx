@@ -862,6 +862,18 @@ const App = () => {
     setMensagemSucesso('');
 
     try {
+      // Validação da confirmação de senha
+      if (novoUsuario.senha !== novoUsuario.confirmarSenha) {
+        setMensagemErro('As senhas não coincidem');
+        return;
+      }
+
+      // Validação do formato da senha (6 dígitos numéricos)
+      if (!/^\d{6}$/.test(novoUsuario.senha)) {
+        setMensagemErro('A senha deve conter exatamente 6 dígitos numéricos');
+        return;
+      }
+
       const response = await authService.register(novoUsuario);
       setMensagemSucesso('Usuário cadastrado com sucesso!');
       setMostrarCadastro(false);
@@ -874,6 +886,7 @@ const App = () => {
         funcao: ''
       });
     } catch (error) {
+      console.error('Erro ao cadastrar usuário:', error);
       setMensagemErro(error.message || 'Erro ao cadastrar usuário');
     }
   };
