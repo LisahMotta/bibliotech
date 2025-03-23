@@ -73,6 +73,7 @@ router.post('/login', async (req, res) => {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
+      console.log('Email ou senha não fornecidos');
       return res.status(400).json({ 
         message: 'Email e senha são obrigatórios' 
       });
@@ -80,6 +81,8 @@ router.post('/login', async (req, res) => {
 
     // Busca o usuário
     const user = await User.findOne({ email });
+    console.log('Usuário encontrado:', user);
+
     if (!user) {
       console.log('Usuário não encontrado:', email);
       return res.status(400).json({ message: 'Email ou senha incorretos' });
@@ -87,6 +90,8 @@ router.post('/login', async (req, res) => {
 
     // Verifica a senha
     const senhaCorreta = await bcrypt.compare(senha, user.senha);
+    console.log('Senha correta:', senhaCorreta);
+
     if (!senhaCorreta) {
       console.log('Senha incorreta para o usuário:', email);
       return res.status(400).json({ message: 'Email ou senha incorretos' });
@@ -100,6 +105,7 @@ router.post('/login', async (req, res) => {
     );
 
     console.log('Login realizado com sucesso:', user._id);
+    console.log('Token gerado:', token);
 
     res.json({
       id: user._id,
