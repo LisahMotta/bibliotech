@@ -23,17 +23,10 @@ router.post('/', auth, async (req, res) => {
             return res.status(400).json({ message: 'Esta matrícula já está cadastrada' });
         }
 
-        // Verifica se o email já existe
-        const emailExiste = await Aluno.findOne({ email: req.body.email });
-        if (emailExiste) {
-            return res.status(400).json({ message: 'Este email já está cadastrado' });
-        }
-
         const aluno = new Aluno({
             nome: req.body.nome,
             matricula: req.body.matricula,
-            curso: req.body.curso,
-            email: req.body.email
+            curso: req.body.curso
         });
 
         const novoAluno = await aluno.save();

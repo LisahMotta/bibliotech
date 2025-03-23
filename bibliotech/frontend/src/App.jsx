@@ -106,6 +106,16 @@ const App = () => {
   const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
   const [mensagemSucesso, setMensagemSucesso] = useState('');
+  const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
+  const [nomeAluno, setNomeAluno] = useState('');
+  const [matriculaAluno, setMatriculaAluno] = useState('');
+  const [cursoAluno, setCursoAluno] = useState('');
+  const [emailAluno, setEmailAluno] = useState('');
+  const [mostrarCadastroLivro, setMostrarCadastroLivro] = useState(false);
+  const [tituloLivro, setTituloLivro] = useState('');
+  const [autorLivro, setAutorLivro] = useState('');
+  const [generoLivro, setGeneroLivro] = useState('');
+  const [anoLivro, setAnoLivro] = useState('');
 
   // Verificar atrasos diariamente
   useEffect(() => {
@@ -951,6 +961,73 @@ const App = () => {
     setMensagemSucesso('Logout realizado com sucesso!');
   };
 
+  const handleCadastrarAluno = async (e) => {
+    e.preventDefault();
+    try {
+      const novoAluno = {
+        nome: nomeAluno,
+        matricula: matriculaAluno,
+        curso: cursoAluno
+      };
+
+      const response = await authService.post('/api/alunos', novoAluno);
+      
+      if (response.data) {
+        setAlunos([...alunos, response.data]);
+        setNomeAluno('');
+        setMatriculaAluno('');
+        setCursoAluno('');
+        setMostrarCadastroAluno(false);
+        alert('Aluno cadastrado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar aluno:', error);
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        alert('Erro ao cadastrar aluno. Verifique se a matrícula já existe.');
+      }
+    }
+  };
+
+  const handleCadastrarLivro = async (e) => {
+    e.preventDefault();
+    try {
+      const novoLivro = {
+        titulo: tituloLivro,
+        autor: autorLivro,
+        genero: generoLivro,
+        ano: parseInt(anoLivro),
+        disponivel: true
+      };
+
+      const response = await authService.post('/api/livros', novoLivro);
+      
+      if (response.data) {
+        setLivros([...livros, response.data]);
+        setTituloLivro('');
+        setAutorLivro('');
+        setGeneroLivro('');
+        setAnoLivro('');
+        setMostrarCadastroLivro(false);
+        alert('Livro cadastrado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao cadastrar livro:', error);
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        alert('Erro ao cadastrar livro. Verifique se todos os campos estão preenchidos corretamente.');
+      }
+    }
+  };
+
   return (
     <div className="App">
       {mostrarLogin && !usuarioAtual && (
@@ -1299,59 +1376,39 @@ const App = () => {
             )}
 
             {mostrarFormularioAluno && (
-              <div className="form-container">
-                <h2>Cadastro de Aluno</h2>
-                
-                <div className="import-section">
-                  <h3>Importar Lista de Alunos</h3>
-                  <p>Faça upload de um arquivo Excel (.xls ou .xlsx)</p>
-                  <input
-                    type="file"
-                    accept=".xls,.xlsx"
-                    onChange={handleFileUploadAluno}
-                    ref={fileInputAlunoRef}
-                    className="file-input"
-                  />
-                  <p className="import-info">
-                    O arquivo deve conter as colunas: nome, RA e série
-                  </p>
-                </div>
-
-                <div className="separator">
-                  <span>ou cadastre manualmente</span>
-                </div>
-
-                <form onSubmit={cadastrarAluno} className="aluno-form">
+              <div className="cadastro-form">
+                <h2>Cadastrar Novo Aluno</h2>
+                <form onSubmit={handleCadastrarAluno}>
                   <div className="form-group">
+                    <label>Nome:</label>
                     <input
                       type="text"
-                      name="nome"
-                      value={novoAluno.nome}
-                      onChange={handleInputChangeAluno}
-                      placeholder="Nome do Aluno"
+                      value={nomeAluno}
+                      onChange={(e) => setNomeAluno(e.target.value)}
+                      required
                     />
                   </div>
                   <div className="form-group">
+                    <label>Matrícula:</label>
                     <input
                       type="text"
-                      name="ra"
-                      value={novoAluno.ra}
-                      onChange={handleInputChangeAluno}
-                      placeholder="RA"
+                      value={matriculaAluno}
+                      onChange={(e) => setMatriculaAluno(e.target.value)}
+                      required
                     />
                   </div>
                   <div className="form-group">
+                    <label>Curso:</label>
                     <input
                       type="text"
-                      name="serie"
-                      value={novoAluno.serie}
-                      onChange={handleInputChangeAluno}
-                      placeholder="Série"
+                      value={cursoAluno}
+                      onChange={(e) => setCursoAluno(e.target.value)}
+                      required
                     />
                   </div>
-                  <div className="form-buttons">
+                  <div className="form-actions">
                     <button type="submit">Cadastrar</button>
-                    <button type="button" onClick={limparFormularioAluno}>Limpar</button>
+                    <button type="button" onClick={() => setMostrarCadastroAluno(false)}>Cancelar</button>
                   </div>
                 </form>
               </div>
@@ -1359,29 +1416,16 @@ const App = () => {
 
             {mostrarAlunos && (
               <div className="alunos-lista">
-                <h2>Alunos Cadastrados</h2>
-                <div className="import-section">
-                  <h3>Importar Lista de Alunos</h3>
-                  <p>Faça upload de um arquivo Excel (.xls ou .xlsx)</p>
-                  <input
-                    type="file"
-                    accept=".xls,.xlsx"
-                    onChange={handleFileUploadAluno}
-                    ref={fileInputAlunoRef}
-                    className="file-input"
-                  />
-                  <p className="import-info">
-                    O arquivo deve conter as colunas: nome, RA e série
-                  </p>
-                </div>
+                <h2>Lista de Alunos</h2>
                 <div className="table-container">
                   <table>
                     <thead>
                       <tr>
                         <th>Nome</th>
-                        <th>RA</th>
-                        <th>Série</th>
+                        <th>Matrícula</th>
+                        <th>Curso</th>
                         <th>Email</th>
+                        <th>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1391,6 +1435,10 @@ const App = () => {
                           <td>{aluno.matricula}</td>
                           <td>{aluno.curso}</td>
                           <td>{aluno.email}</td>
+                          <td>
+                            <button onClick={() => handleEditarAluno(aluno)}>Editar</button>
+                            <button onClick={() => handleExcluirAluno(aluno._id)}>Excluir</button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
