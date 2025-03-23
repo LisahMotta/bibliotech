@@ -17,39 +17,11 @@ const setAuthToken = (token) => {
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     console.log('Token configurado:', token);
-    console.log('Headers atualizados:', api.defaults.headers);
   } else {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
     console.log('Token removido');
   }
-};
-
-// Função para criar uma nova instância do axios com o token
-const createAuthenticatedApi = (token) => {
-  const authenticatedApi = axios.create({
-    baseURL: 'https://bibliotech-kv95.onrender.com',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
-  });
-
-  // Adiciona interceptor de resposta para esta instância
-  authenticatedApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        console.log('Erro 401 detectado em requisição autenticada');
-        setAuthToken(null);
-        window.dispatchEvent(new Event('authError'));
-      }
-      return Promise.reject(error);
-    }
-  );
-
-  return authenticatedApi;
 };
 
 export const authService = {
@@ -73,7 +45,6 @@ export const authService = {
         // Verifica se o token foi configurado corretamente
         const tokenConfigurado = localStorage.getItem('token');
         console.log('Token configurado no localStorage:', tokenConfigurado);
-        console.log('Headers após configuração:', api.defaults.headers);
         
         if (!tokenConfigurado) {
           throw new Error('Erro ao configurar o token');
@@ -156,15 +127,6 @@ export const authService = {
     return null;
   },
 
-  // Funções auxiliares para requisições autenticadas
-  getAuthenticatedApi: () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Token não encontrado');
-    }
-    return createAuthenticatedApi(token);
-  },
-
   get: async (url) => {
     try {
       const token = getToken();
@@ -174,7 +136,6 @@ export const authService = {
 
       console.log('Fazendo requisição GET para:', url);
       console.log('Token atual:', token);
-      console.log('Headers da requisição:', api.defaults.headers);
 
       const response = await api.get(url);
       return response;
@@ -197,7 +158,6 @@ export const authService = {
       }
 
       console.log('Fazendo requisição POST para:', url);
-      console.log('Headers da requisição:', api.defaults.headers);
 
       const response = await api.post(url, data);
       return response;
@@ -220,8 +180,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
       console.log('Requisição para:', config.url);
       console.log('Headers da requisição:', config.headers);
-    } else {
-      console.log('Nenhum token encontrado para a requisição:', config.url);
     }
     return config;
   },
