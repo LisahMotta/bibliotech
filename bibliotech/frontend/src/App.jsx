@@ -335,20 +335,26 @@ const App = () => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+          console.log('Dados lidos do arquivo:', jsonData);
+
           const livrosImportados = jsonData.map(item => ({
-            titulo: item.nome || item.Nome || item.NOME || '',
+            titulo: item.titulo || item.Titulo || item.TÍTULO || item.nome || item.Nome || item.NOME || '',
             autor: item.autor || item.Autor || item.AUTOR || '',
-            genero: item.genero || item.Gênero || item.GENERO || '',
+            genero: item.genero || item.Genero || item.GÊNERO || item.gênero || '',
             ano: parseInt(item.ano || item.Ano || item.ANO || new Date().getFullYear()),
             disponivel: true
           }));
 
+          console.log('Livros mapeados:', livrosImportados);
+
           const livrosValidos = livrosImportados.filter(livro => 
-            livro.titulo && livro.autor && livro.genero && livro.ano
+            livro.titulo && livro.autor && livro.genero
           );
 
+          console.log('Livros válidos:', livrosValidos);
+
           if (livrosValidos.length === 0) {
-            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, autor, gênero e ano.');
+            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: título, autor e gênero.');
             return;
           }
 
@@ -420,18 +426,24 @@ const App = () => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
+          console.log('Dados lidos do arquivo:', jsonData);
+
           const alunosImportados = jsonData.map(item => ({
             nome: item.nome || item.Nome || item.NOME || '',
-            matricula: item.ra || item.RA || item.Ra || '',
-            curso: item.serie || item.Série || item.SERIE || ''
+            matricula: item.matricula || item.Matricula || item.MATRÍCULA || item.ra || item.RA || item.Ra || '',
+            curso: item.curso || item.Curso || item.CURSO || item.serie || item.Serie || item.SÉRIE || item.série || ''
           }));
+
+          console.log('Alunos mapeados:', alunosImportados);
 
           const alunosValidos = alunosImportados.filter(aluno => 
             aluno.nome && aluno.matricula && aluno.curso
           );
 
+          console.log('Alunos válidos:', alunosValidos);
+
           if (alunosValidos.length === 0) {
-            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA e série.');
+            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, matrícula e curso.');
             return;
           }
 
@@ -439,28 +451,16 @@ const App = () => {
             alert(`Atenção: ${alunosImportados.length - alunosValidos.length} alunos foram ignorados por falta de dados obrigatórios.`);
           }
 
-          try {
-            // Enviar para o backend usando o serviço de API
-            const response = await authService.post('/api/alunos/importar', alunosValidos);
+          // Enviar para o backend usando o serviço de API
+          const response = await authService.post('/api/alunos/importar', alunosValidos);
+          
+          if (response.data) {
+            alert(`${response.data.resultado.sucesso.length} alunos importados com sucesso!`);
             
-            if (response.data) {
-              alert(`${response.data.resultado.sucesso.length} alunos importados com sucesso!`);
-              
-              // Atualizar a lista de alunos
-              const alunosResponse = await authService.get('/api/alunos');
-              if (alunosResponse.data) {
-                setAlunos(alunosResponse.data);
-              }
-            }
-          } catch (error) {
-            console.error('Erro ao enviar dados para o servidor:', error);
-            if (error.response?.status === 401) {
-              setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-              authService.logout();
-              setUsuarioAtual(null);
-              setMostrarLogin(true);
-            } else {
-              alert('Erro ao enviar dados para o servidor. Verifique se o arquivo está no formato correto.');
+            // Atualizar a lista de alunos
+            const alunosResponse = await authService.get('/api/alunos');
+            if (alunosResponse.data) {
+              setAlunos(alunosResponse.data);
             }
           }
           
@@ -469,7 +469,14 @@ const App = () => {
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+          if (error.response?.status === 401) {
+            setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+            authService.logout();
+            setUsuarioAtual(null);
+            setMostrarLogin(true);
+          } else {
+            alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+          }
         }
       };
       reader.readAsArrayBuffer(file);
