@@ -876,28 +876,46 @@ const App = () => {
   };
 
   // Modificar função de busca
-  const buscarRegistros = () => {
-    if (tipoBusca === 'aluno') {
-      const resultados = emprestimos.filter(emp =>
-        emp.alunoNome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-        emp.alunoRA.includes(termoBusca)
-      );
-      setResultadosBusca(resultados);
-    } else {
-      const resultados = livros
-        .filter(livro =>
-          livro.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-          livro.autor.toLowerCase().includes(termoBusca.toLowerCase()) ||
-          livro.genero.toLowerCase().includes(termoBusca.toLowerCase())
-        )
-        .map(livro => {
-          const situacao = getSituacaoLivro(livro.nome);
-          return {
-            ...livro,
-            situacao
-          };
-        });
-      setResultadosBusca(resultados);
+  const buscarRegistros = async () => {
+    try {
+      if (tipoBusca === 'aluno') {
+        // Buscar alunos no backend
+        const response = await authService.get('/api/alunos');
+        if (response.data) {
+          const resultados = response.data.filter(aluno =>
+            aluno.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
+            aluno.matricula.toLowerCase().includes(termoBusca.toLowerCase())
+          );
+          setResultadosBusca(resultados);
+        }
+      } else {
+        // Buscar livros no backend
+        const response = await authService.get('/api/livros');
+        if (response.data) {
+          const resultados = response.data.filter(livro =>
+            livro.titulo.toLowerCase().includes(termoBusca.toLowerCase()) ||
+            livro.autor.toLowerCase().includes(termoBusca.toLowerCase()) ||
+            livro.genero.toLowerCase().includes(termoBusca.toLowerCase())
+          ).map(livro => {
+            const situacao = getSituacaoLivro(livro.titulo);
+            return {
+              ...livro,
+              situacao
+            };
+          });
+          setResultadosBusca(resultados);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar registros:', error);
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        setMensagemErro('Erro ao buscar registros. Por favor, tente novamente.');
+      }
     }
   };
 
@@ -997,6 +1015,12 @@ const App = () => {
   const handleCadastrarLivro = async (e) => {
     e.preventDefault();
     try {
+      // Validar campos obrigatórios
+      if (!tituloLivro || !autorLivro || !generoLivro || !anoLivro) {
+        setMensagemErro('Por favor, preencha todos os campos obrigatórios.');
+        return;
+      }
+
       const novoLivro = {
         titulo: tituloLivro,
         autor: autorLivro,
@@ -1010,7 +1034,13 @@ const App = () => {
       
       if (response.data) {
         console.log('Livro cadastrado com sucesso:', response.data);
-        setLivros([...livros, response.data]);
+        // Atualizar a lista de livros
+        const livrosResponse = await authService.get('/api/livros');
+        if (livrosResponse.data) {
+          setLivros(livrosResponse.data);
+        }
+        
+        // Limpar formulário
         setTituloLivro('');
         setAutorLivro('');
         setGeneroLivro('');
@@ -1310,64 +1340,51 @@ const App = () => {
                   <span>ou cadastre manualmente</span>
       </div>
 
-                <form onSubmit={cadastrarLivro} className="livro-form">
+                <form onSubmit={handleCadastrarLivro} className="livro-form">
                   <div className="form-group">
                     <input
                       type="text"
-                      name="nome"
-                      value={novoLivro.nome}
-                      onChange={handleInputChange}
-                      placeholder="Nome do Livro"
+                      value={tituloLivro}
+                      onChange={(e) => setTituloLivro(e.target.value)}
+                      placeholder="Título do Livro"
+                      required
                     />
                   </div>
                   <div className="form-group">
                     <input
                       type="text"
-                      name="autor"
-                      value={novoLivro.autor}
-                      onChange={handleInputChange}
+                      value={autorLivro}
+                      onChange={(e) => setAutorLivro(e.target.value)}
                       placeholder="Autor"
+                      required
                     />
                   </div>
                   <div className="form-group">
                     <input
                       type="text"
-                      name="isbn"
-                      value={novoLivro.isbn}
-                      onChange={handleInputChange}
-                      placeholder="ISBN"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      name="edicao"
-                      value={novoLivro.edicao}
-                      onChange={handleInputChange}
-                      placeholder="Edição"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      name="genero"
-                      value={novoLivro.genero}
-                      onChange={handleInputChange}
+                      value={generoLivro}
+                      onChange={(e) => setGeneroLivro(e.target.value)}
                       placeholder="Gênero"
+                      required
                     />
                   </div>
                   <div className="form-group">
                     <input
-                      type="text"
-                      name="numeroTombo"
-                      value={novoLivro.numeroTombo}
-                      onChange={handleInputChange}
-                      placeholder="Número de Tombo"
+                      type="number"
+                      value={anoLivro}
+                      onChange={(e) => setAnoLivro(e.target.value)}
+                      placeholder="Ano"
+                      required
                     />
                   </div>
                   <div className="form-buttons">
                     <button type="submit">Cadastrar</button>
-                    <button type="button" onClick={limparFormulario}>Limpar</button>
+                    <button type="button" onClick={() => {
+                      setTituloLivro('');
+                      setAutorLivro('');
+                      setGeneroLivro('');
+                      setAnoLivro('');
+                    }}>Limpar</button>
                   </div>
                 </form>
               </div>
@@ -1380,23 +1397,21 @@ const App = () => {
                   <table>
                     <thead>
                       <tr>
-                        <th>Nº Tombo</th>
-                        <th>Nome</th>
+                        <th>Título</th>
                         <th>Autor</th>
-                        <th>ISBN</th>
-                        <th>Edição</th>
                         <th>Gênero</th>
+                        <th>Ano</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {livros.map(livro => (
-                        <tr key={livro.id}>
-                          <td>{livro.numeroTombo}</td>
-                          <td>{livro.nome}</td>
+                        <tr key={livro._id}>
+                          <td>{livro.titulo}</td>
                           <td>{livro.autor}</td>
-                          <td>{livro.isbn}</td>
-                          <td>{livro.edicao}</td>
                           <td>{livro.genero}</td>
+                          <td>{livro.ano}</td>
+                          <td>{livro.disponivel ? 'Disponível' : 'Emprestado'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1618,25 +1633,19 @@ const App = () => {
                           <table>
                             <thead>
                               <tr>
-                                <th>Aluno</th>
-                                <th>RA</th>
+                                <th>Nome</th>
+                                <th>Matrícula</th>
                                 <th>Série</th>
-                                <th>Livro</th>
-                                <th>Data Empréstimo</th>
-                                <th>Data Devolução</th>
-                                <th>Status</th>
+                                <th>Email</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {resultadosBusca.map((emp, index) => (
-                                <tr key={index} className={emp.status === 'emprestado' ? 'emprestado' : 'devolvido'}>
-                                  <td>{emp.alunoNome}</td>
-                                  <td>{emp.alunoRA}</td>
-                                  <td>{emp.alunoSerie}</td>
-                                  <td>{emp.livroNome}</td>
-                                  <td>{emp.dataEmprestimo}</td>
-                                  <td>{emp.dataDevolucao || '-'}</td>
-                                  <td>{emp.status === 'emprestado' ? 'Emprestado' : 'Devolvido'}</td>
+                              {resultadosBusca.map((aluno) => (
+                                <tr key={aluno._id}>
+                                  <td>{aluno.nome}</td>
+                                  <td>{aluno.matricula}</td>
+                                  <td>{aluno.serie}</td>
+                                  <td>{aluno.email}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1645,30 +1654,21 @@ const App = () => {
                           <table>
                             <thead>
                               <tr>
-                                <th>Livro</th>
+                                <th>Título</th>
                                 <th>Autor</th>
                                 <th>Gênero</th>
-                                <th>Situação</th>
-                                <th>Detalhes</th>
+                                <th>Ano</th>
+                                <th>Status</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {resultadosBusca.map((livro, index) => (
-                                <tr key={index} className={livro.situacao.status === 'Emprestado' ? 'emprestado' : 'disponivel'}>
-                                  <td>{livro.nome}</td>
+                              {resultadosBusca.map((livro) => (
+                                <tr key={livro._id}>
+                                  <td>{livro.titulo}</td>
                                   <td>{livro.autor}</td>
                                   <td>{livro.genero}</td>
-                                  <td>{livro.situacao.status}</td>
-                                  <td>
-                                    {livro.situacao.status === 'Emprestado' ? (
-                                      <>
-                                        Emprestado para: {livro.situacao.aluno}<br/>
-                                        RA: {livro.situacao.ra}<br/>
-                                        Série: {livro.situacao.serie}<br/>
-                                        Data: {livro.situacao.dataEmprestimo}
-                                      </>
-                                    ) : 'Disponível para empréstimo'}
-                                  </td>
+                                  <td>{livro.ano}</td>
+                                  <td>{livro.disponivel ? 'Disponível' : 'Emprestado'}</td>
                                 </tr>
                               ))}
                             </tbody>
