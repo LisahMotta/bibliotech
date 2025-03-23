@@ -17,6 +17,7 @@ const setAuthToken = (token) => {
     localStorage.setItem('token', token);
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     console.log('Token configurado:', token);
+    console.log('Headers atualizados:', api.defaults.headers);
   } else {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
@@ -72,6 +73,7 @@ export const authService = {
         // Verifica se o token foi configurado corretamente
         const tokenConfigurado = localStorage.getItem('token');
         console.log('Token configurado no localStorage:', tokenConfigurado);
+        console.log('Headers após configuração:', api.defaults.headers);
         
         if (!tokenConfigurado) {
           throw new Error('Erro ao configurar o token');
@@ -172,6 +174,7 @@ export const authService = {
 
       console.log('Fazendo requisição GET para:', url);
       console.log('Token atual:', token);
+      console.log('Headers da requisição:', api.defaults.headers);
 
       const response = await api.get(url);
       return response;
