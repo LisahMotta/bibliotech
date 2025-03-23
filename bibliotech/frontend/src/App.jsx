@@ -431,13 +431,16 @@ const App = () => {
           const alunosImportados = jsonData.map(item => ({
             nome: item.nome || item.Nome || item.NOME || '',
             matricula: item.matricula || item.Matricula || item.MATRÍCULA || item.ra || item.RA || item.Ra || '',
-            curso: item.curso || item.Curso || item.CURSO || item.serie || item.Serie || item.SÉRIE || item.série || ''
+            curso: item.curso || item.Curso || item.CURSO || item.serie || item.Serie || item.SÉRIE || item.série || '',
+            email: item.email || item.Email || item.EMAIL || `${item.matricula || item.ra}@escola.com`
           }));
 
           console.log('Alunos mapeados:', alunosImportados);
 
           const alunosValidos = alunosImportados.filter(aluno => 
-            aluno.nome && aluno.matricula && aluno.curso
+            aluno.nome && aluno.nome.trim() !== '' &&
+            aluno.matricula && aluno.matricula.trim() !== '' &&
+            aluno.curso && aluno.curso.trim() !== ''
           );
 
           console.log('Alunos válidos:', alunosValidos);

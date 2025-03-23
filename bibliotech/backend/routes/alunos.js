@@ -48,55 +48,75 @@ router.post('/', auth, async (req, res) => {
 router.post('/importar', auth, async (req, res) => {
     try {
         const alunos = req.body;
+        
         if (!Array.isArray(alunos)) {
-            return res.status(400).json({ message: 'Dados inválidos. Envie um array de alunos.' });
+            return res.status(400).json({ 
+                message: 'Dados inválidos. Envie um array de alunos.',
+                resultado: {
+                    sucesso: [],
+                    falha: []
+                }
+            });
         }
 
-        const resultado = {
+        const resultados = {
             sucesso: [],
-            falhas: []
+            falha: []
         };
 
-        for (const alunoData of alunos) {
+        for (const aluno of alunos) {
             try {
-                // Verifica se a matrícula já existe
-                const matriculaExiste = await Aluno.findOne({ matricula: alunoData.matricula });
-                if (matriculaExiste) {
-                    resultado.falhas.push({
-                        aluno: alunoData,
-                        erro: 'Matrícula já cadastrada'
+                // Verificar se já existe um aluno com a mesma matrícula
+                const alunoExistente = await Aluno.findOne({ 
+                    $or: [
+                        { numeroRegistro: aluno.matricula },
+                        { email: aluno.email }
+                    ]
+                });
+
+                if (alunoExistente) {
+                    resultados.falha.push({
+                        aluno,
+                        erro: alunoExistente.numeroRegistro === aluno.matricula 
+                            ? 'Matrícula já cadastrada' 
+                            : 'Email já cadastrado'
                     });
                     continue;
                 }
 
-                // Verifica se o email já existe
-                const emailExiste = await Aluno.findOne({ email: alunoData.email });
-                if (emailExiste) {
-                    resultado.falhas.push({
-                        aluno: alunoData,
-                        erro: 'Email já cadastrado'
-                    });
-                    continue;
-                }
+                // Criar novo aluno
+                const novoAluno = new Aluno({
+                    nome: aluno.nome,
+                    numeroRegistro: aluno.matricula,
+                    curso: aluno.curso,
+                    email: aluno.email || `${aluno.matricula}@escola.com`
+                });
 
-                const aluno = new Aluno(alunoData);
-                const novoAluno = await aluno.save();
-                resultado.sucesso.push(novoAluno);
-            } catch (error) {
-                resultado.falhas.push({
-                    aluno: alunoData,
-                    erro: error.message
+                await novoAluno.save();
+                resultados.sucesso.push(novoAluno);
+            } catch (erro) {
+                console.error('Erro ao importar aluno:', erro);
+                resultados.falha.push({
+                    aluno,
+                    erro: erro.message
                 });
             }
         }
 
-        res.status(201).json({
-            message: `Importação concluída. ${resultado.sucesso.length} alunos importados com sucesso e ${resultado.falhas.length} falhas.`,
-            resultado
+        res.json({
+            message: `${resultados.sucesso.length} alunos importados com sucesso${resultados.falha.length > 0 ? `, ${resultados.falha.length} falharam` : ''}.`,
+            resultado: resultados
         });
-    } catch (error) {
-        console.error('Erro na importação de alunos:', error);
-        res.status(400).json({ message: 'Erro na importação', error: error.message });
+    } catch (erro) {
+        console.error('Erro ao importar alunos:', erro);
+        res.status(500).json({ 
+            message: 'Erro ao importar alunos',
+            erro: erro.message,
+            resultado: {
+                sucesso: [],
+                falha: []
+            }
+        });
     }
 });
 
