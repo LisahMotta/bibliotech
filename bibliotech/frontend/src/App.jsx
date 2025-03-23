@@ -429,10 +429,10 @@ const App = () => {
           console.log('Dados lidos do arquivo:', jsonData);
 
           const alunosImportados = jsonData.map(item => ({
-            nome: item.nome || item.Nome || item.NOME || '',
-            matricula: item.matricula || item.Matricula || item.MATRÍCULA || item.ra || item.RA || item.Ra || '',
-            curso: item.curso || item.Curso || item.CURSO || item.serie || item.Serie || item.SÉRIE || item.série || '',
-            email: item.email || item.Email || item.EMAIL || `${item.matricula || item.ra}@escola.com`
+            nome: String(item.nome || item.Nome || item.NOME || ''),
+            matricula: String(item.RA || item.ra || item.Ra || ''),
+            curso: String(item.serie || item.Serie || item.SÉRIE || item.série || ''),
+            email: String(item.email || item.Email || item.EMAIL || `${item.RA || item.ra || ''}@escola.com`)
           }));
 
           console.log('Alunos mapeados:', alunosImportados);
@@ -446,7 +446,7 @@ const App = () => {
           console.log('Alunos válidos:', alunosValidos);
 
           if (alunosValidos.length === 0) {
-            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, matrícula e curso.');
+            alert('Nenhum aluno válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: nome, RA e série.');
             return;
           }
 
@@ -478,7 +478,7 @@ const App = () => {
             setUsuarioAtual(null);
             setMostrarLogin(true);
           } else {
-            alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.');
+            alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido com as colunas: nome, RA e série.');
           }
         }
       };
@@ -1313,7 +1313,7 @@ const App = () => {
                     className="file-input"
                   />
                   <p className="import-info">
-                    O arquivo deve conter as colunas: nome, matrícula e curso
+                    O arquivo deve conter as colunas: nome, RA e série
                   </p>
                 </div>
 
@@ -1371,7 +1371,7 @@ const App = () => {
                     className="file-input"
                   />
                   <p className="import-info">
-                    O arquivo deve conter as colunas: nome, matrícula e curso
+                    O arquivo deve conter as colunas: nome, RA e série
                   </p>
                 </div>
                 <div className="table-container">
