@@ -180,22 +180,35 @@ body {
   flex-direction: column;
 }
 
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1em;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .form-group input {
-  padding: 12px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  color: #1a1a1a;
-  transition: all 0.3s ease;
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2c3e50;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: rgba(52, 152, 219, 0.5);
-  box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  background: white;
+}
+
+.form-group input::placeholder {
+  color: #94a3b8;
 }
 
 .form-buttons {
@@ -1372,8 +1385,10 @@ input[readonly] {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #555;
-  font-weight: 500;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1em;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .form-group select,
@@ -1419,4 +1434,22 @@ input[readonly] {
 .btn-cadastrar:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.cadastro-form h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8em;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.cadastro-form {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 2rem auto;
 }
