@@ -137,7 +137,14 @@ export const authService = {
       console.log('Fazendo requisição GET para:', url);
       console.log('Token atual:', token);
 
-      const response = await api.get(url);
+      // Configura o token no header da requisição
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      const response = await api.get(url, config);
       return response;
     } catch (error) {
       console.error('Erro na requisição GET:', error);
@@ -159,7 +166,14 @@ export const authService = {
 
       console.log('Fazendo requisição POST para:', url);
 
-      const response = await api.post(url, data);
+      // Configura o token no header da requisição
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      const response = await api.post(url, data, config);
       return response;
     } catch (error) {
       console.error('Erro na requisição POST:', error);
