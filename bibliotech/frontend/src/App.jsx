@@ -1021,15 +1021,23 @@ const App = () => {
         return;
       }
 
+      // Validar ano
+      const anoAtual = new Date().getFullYear();
+      if (anoLivro < 1000 || anoLivro > anoAtual) {
+        setMensagemErro(`O ano deve estar entre 1000 e ${anoAtual}`);
+        return;
+      }
+
       const novoLivro = {
         titulo: tituloLivro,
         autor: autorLivro,
         genero: generoLivro,
-        ano: parseInt(anoLivro),
+        ano: anoLivro,
         disponivel: true
       };
 
-      console.log('Enviando dados do livro:', novoLivro);
+      console.log('Dados do livro a serem enviados:', novoLivro);
+
       const response = await authService.post('/api/livros', novoLivro);
       
       if (response.data) {
@@ -1039,18 +1047,23 @@ const App = () => {
         if (livrosResponse.data) {
           setLivros(livrosResponse.data);
         }
-        
-        // Limpar formulário
+        // Limpar o formulário
         setTituloLivro('');
         setAutorLivro('');
         setGeneroLivro('');
         setAnoLivro('');
-        setMostrarCadastroLivro(false);
         setMensagemSucesso('Livro cadastrado com sucesso!');
       }
     } catch (error) {
       console.error('Erro ao cadastrar livro:', error);
-      setMensagemErro('Erro ao cadastrar livro. Por favor, tente novamente.');
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        setMensagemErro(error.response?.data?.message || 'Erro ao cadastrar livro. Por favor, tente novamente.');
+      }
     }
   };
 
@@ -1084,6 +1097,26 @@ const App = () => {
       } catch (error) {
         console.error('Erro ao excluir aluno:', error);
         setMensagemErro('Erro ao excluir aluno. Por favor, tente novamente.');
+      }
+    }
+  };
+
+  const handleListarLivros = async () => {
+    try {
+      const response = await authService.get('/api/livros');
+      if (response.data) {
+        console.log('Livros carregados:', response.data);
+        setLivros(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao listar livros:', error);
+      if (error.response?.status === 401) {
+        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+        authService.logout();
+        setUsuarioAtual(null);
+        setMostrarLogin(true);
+      } else {
+        setMensagemErro('Erro ao listar livros. Por favor, tente novamente.');
       }
     }
   };
@@ -1257,14 +1290,11 @@ const App = () => {
               }}>
                 {mostrarFormulario ? 'Fechar Cadastro' : 'Cadastrar Livro'}
               </button>
-              <button onClick={() => {
-                setMostrarLivros(!mostrarLivros);
-                setMostrarFormulario(false);
-                setMostrarFormularioAluno(false);
-                setMostrarAlunos(false);
-                setMostrarEmprestimos(false);
-              }}>
-                {mostrarLivros ? 'Fechar Lista' : 'Listar Livros'}
+              <button 
+                className="btn btn-primary" 
+                onClick={handleListarLivros}
+              >
+                Listar Livros
               </button>
               <button onClick={() => {
                 setMostrarFormularioAluno(!mostrarFormularioAluno);
