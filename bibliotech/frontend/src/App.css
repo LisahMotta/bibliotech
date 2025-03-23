@@ -302,26 +302,63 @@ tr:hover {
 .import-section h3 {
   color: #2c3e50;
   margin-bottom: 15px;
+  font-size: 1.2em;
 }
 
 .import-section p {
   color: #6c757d;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .file-input {
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ced4da;
+  border: 2px dashed #3498db;
   border-radius: 4px;
   background-color: white;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.file-input:hover {
+  border-color: #2980b9;
 }
 
 .import-info {
   font-size: 0.9em;
+  color: #666;
+  margin-top: 10px;
+}
+
+.separator {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.separator::before,
+.separator::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: #dee2e6;
+}
+
+.separator::before {
+  left: 0;
+}
+
+.separator::after {
+  right: 0;
+}
+
+.separator span {
+  background-color: white;
+  padding: 0 10px;
   color: #6c757d;
-  font-style: italic;
+  font-size: 0.9em;
 }
 
 .alunos-lista {

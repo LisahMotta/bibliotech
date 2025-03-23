@@ -1413,6 +1413,26 @@ const App = () => {
             {mostrarFormularioAluno && (
               <div className="cadastro-form">
                 <h2>Cadastrar Novo Aluno</h2>
+                
+                <div className="import-section">
+                  <h3>Importar Lista de Alunos</h3>
+                  <p>Faça upload de um arquivo Excel (.xls ou .xlsx)</p>
+                  <input
+                    type="file"
+                    accept=".xls,.xlsx"
+                    onChange={handleFileUploadAluno}
+                    ref={fileInputAlunoRef}
+                    className="file-input"
+                  />
+                  <p className="import-info">
+                    O arquivo deve conter as colunas: nome, RA e curso
+                  </p>
+                </div>
+
+                <div className="separator">
+                  <span>ou cadastre manualmente</span>
+                </div>
+
                 <form onSubmit={handleCadastrarAluno}>
                   <div className="form-group">
                     <label>Nome:</label>
