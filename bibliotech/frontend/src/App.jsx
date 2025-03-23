@@ -1005,27 +1005,22 @@ const App = () => {
         disponivel: true
       };
 
+      console.log('Enviando dados do livro:', novoLivro);
       const response = await authService.post('/api/livros', novoLivro);
       
       if (response.data) {
+        console.log('Livro cadastrado com sucesso:', response.data);
         setLivros([...livros, response.data]);
         setTituloLivro('');
         setAutorLivro('');
         setGeneroLivro('');
         setAnoLivro('');
         setMostrarCadastroLivro(false);
-        alert('Livro cadastrado com sucesso!');
+        setMensagemSucesso('Livro cadastrado com sucesso!');
       }
     } catch (error) {
       console.error('Erro ao cadastrar livro:', error);
-      if (error.response?.status === 401) {
-        setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-        authService.logout();
-        setUsuarioAtual(null);
-        setMostrarLogin(true);
-      } else {
-        alert('Erro ao cadastrar livro. Verifique se todos os campos estão preenchidos corretamente.');
-      }
+      setMensagemErro('Erro ao cadastrar livro. Por favor, tente novamente.');
     }
   };
 
