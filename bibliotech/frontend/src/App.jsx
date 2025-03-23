@@ -116,6 +116,7 @@ const App = () => {
   const [autorLivro, setAutorLivro] = useState('');
   const [generoLivro, setGeneroLivro] = useState('');
   const [anoLivro, setAnoLivro] = useState('');
+  const [tomboLivro, setTomboLivro] = useState('');
   const [mostrarCadastroAluno, setMostrarCadastroAluno] = useState(false);
 
   // Verificar atrasos diariamente
@@ -1016,7 +1017,7 @@ const App = () => {
     e.preventDefault();
     try {
       // Validar campos obrigatórios
-      if (!tituloLivro || !autorLivro || !generoLivro || !anoLivro) {
+      if (!tituloLivro || !autorLivro || !generoLivro || !anoLivro || !tomboLivro) {
         setMensagemErro('Por favor, preencha todos os campos obrigatórios.');
         return;
       }
@@ -1029,6 +1030,7 @@ const App = () => {
       }
 
       const novoLivro = {
+        tombo: tomboLivro,
         titulo: tituloLivro,
         autor: autorLivro,
         genero: generoLivro,
@@ -1052,6 +1054,7 @@ const App = () => {
         setAutorLivro('');
         setGeneroLivro('');
         setAnoLivro('');
+        setTomboLivro('');
         setMostrarFormulario(false);
         setMensagemSucesso(`Livro "${novoLivro.titulo}" cadastrado com sucesso!`);
         
@@ -1413,6 +1416,15 @@ const App = () => {
                       required
                     />
                   </div>
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      value={tomboLivro}
+                      onChange={(e) => setTomboLivro(e.target.value)}
+                      placeholder="Número de Tombo"
+                      required
+                    />
+                  </div>
                   <div className="form-buttons">
                     <button type="submit">Cadastrar</button>
                     <button type="button" onClick={() => {
@@ -1420,6 +1432,7 @@ const App = () => {
                       setAutorLivro('');
                       setGeneroLivro('');
                       setAnoLivro('');
+                      setTomboLivro('');
                     }}>Limpar</button>
                   </div>
                 </form>

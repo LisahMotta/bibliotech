@@ -2,6 +2,12 @@
 const mongoose = require('mongoose');
 
 const livroSchema = new mongoose.Schema({
+  tombo: {
+    type: String,
+    required: [true, 'O número de tombo é obrigatório'],
+    unique: true,
+    trim: true
+  },
   titulo: {
     type: String,
     required: [true, 'O título é obrigatório'],
@@ -34,6 +40,7 @@ const livroSchema = new mongoose.Schema({
 });
 
 // Índices para melhorar a performance das buscas
+livroSchema.index({ tombo: 1 });
 livroSchema.index({ titulo: 1 });
 livroSchema.index({ autor: 1 });
 livroSchema.index({ genero: 1 });
