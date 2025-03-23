@@ -109,7 +109,7 @@ const App = () => {
   const [mostrarListaAlunos, setMostrarListaAlunos] = useState(false);
   const [nomeAluno, setNomeAluno] = useState('');
   const [matriculaAluno, setMatriculaAluno] = useState('');
-  const [cursoAluno, setCursoAluno] = useState('');
+  const [serieAluno, setSerieAluno] = useState('');
   const [emailAluno, setEmailAluno] = useState('');
   const [mostrarCadastroLivro, setMostrarCadastroLivro] = useState(false);
   const [tituloLivro, setTituloLivro] = useState('');
@@ -442,7 +442,7 @@ const App = () => {
           const alunosImportados = jsonData.map(item => ({
             nome: String(item.nome || item.Nome || item.NOME || ''),
             matricula: String(item.RA || item.ra || item.Ra || ''),
-            curso: String(item.serie || item.Serie || item.SÉRIE || item.série || ''),
+            serie: String(item.serie || item.Serie || item.SÉRIE || item.série || ''),
             email: String(item.email || item.Email || item.EMAIL || `${item.RA || item.ra || ''}@escola.com`)
           }));
 
@@ -451,7 +451,7 @@ const App = () => {
           const alunosValidos = alunosImportados.filter(aluno => 
             aluno.nome && aluno.nome.trim() !== '' &&
             aluno.matricula && aluno.matricula.trim() !== '' &&
-            aluno.curso && aluno.curso.trim() !== ''
+            aluno.serie && aluno.serie.trim() !== ''
           );
 
           console.log('Alunos válidos:', alunosValidos);
@@ -968,7 +968,7 @@ const App = () => {
       const novoAluno = {
         nome: nomeAluno,
         matricula: matriculaAluno,
-        curso: cursoAluno
+        serie: serieAluno
       };
 
       const response = await authService.post('/api/alunos', novoAluno);
@@ -977,7 +977,7 @@ const App = () => {
         setAlunos([...alunos, response.data]);
         setNomeAluno('');
         setMatriculaAluno('');
-        setCursoAluno('');
+        setSerieAluno('');
         setMostrarCadastroAluno(false);
         alert('Aluno cadastrado com sucesso!');
       }
@@ -1448,11 +1448,11 @@ const App = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Curso:</label>
+                    <label>Série:</label>
                     <input
                       type="text"
-                      value={cursoAluno}
-                      onChange={(e) => setCursoAluno(e.target.value)}
+                      value={serieAluno}
+                      onChange={(e) => setSerieAluno(e.target.value)}
                       required
                     />
                   </div>
