@@ -1313,7 +1313,7 @@ const App = () => {
                     className="file-input"
                   />
                   <p className="import-info">
-                    O arquivo deve conter as colunas: nome, RA e série
+                    O arquivo deve conter as colunas: nome, matrícula e curso
                   </p>
                 </div>
 
@@ -1360,6 +1360,20 @@ const App = () => {
             {mostrarAlunos && (
               <div className="alunos-lista">
                 <h2>Alunos Cadastrados</h2>
+                <div className="import-section">
+                  <h3>Importar Lista de Alunos</h3>
+                  <p>Faça upload de um arquivo Excel (.xls ou .xlsx)</p>
+                  <input
+                    type="file"
+                    accept=".xls,.xlsx"
+                    onChange={handleFileUploadAluno}
+                    ref={fileInputAlunoRef}
+                    className="file-input"
+                  />
+                  <p className="import-info">
+                    O arquivo deve conter as colunas: nome, matrícula e curso
+                  </p>
+                </div>
                 <div className="table-container">
                   <table>
                     <thead>

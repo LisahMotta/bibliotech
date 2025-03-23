@@ -292,84 +292,74 @@ tr:hover {
 
 /* Estilos para a seção de importação */
 .import-section {
-  background: rgba(255, 255, 255, 0.15);
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
   padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 20px;
 }
 
 .import-section h3 {
-  color: #1a1a1a;
-  margin: 0 0 10px 0;
-  font-size: 1.2em;
+  color: #2c3e50;
+  margin-bottom: 15px;
 }
 
 .import-section p {
-  color: #333;
-  margin: 10px 0;
-  font-size: 0.9em;
-}
-
-.import-info {
-  color: #666;
-  font-size: 0.85em;
-  font-style: italic;
-  margin-top: 10px;
+  color: #6c757d;
+  margin-bottom: 10px;
 }
 
 .file-input {
   width: 100%;
   padding: 10px;
-  margin: 10px 0;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.file-input:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(52, 152, 219, 0.5);
-}
-
-/* Separador */
-.separator {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 30px 0;
-}
-
-.separator::before,
-.separator::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.separator span {
-  padding: 0 10px;
-  color: #666;
-  font-size: 0.9em;
-  background: rgba(255, 255, 255, 0.2);
+  margin-bottom: 10px;
+  border: 1px solid #ced4da;
   border-radius: 4px;
-  margin: 0 10px;
+  background-color: white;
+}
+
+.import-info {
+  font-size: 0.9em;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.alunos-lista {
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.table-container th,
+.table-container td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.table-container th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.table-container tr:hover {
+  background-color: #f8f9fa;
 }
 
 /* Estilos para a lista de alunos */
-.alunos-lista {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 20px;
-  border-radius: 16px;
-  margin: 20px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
 .alunos-lista h2 {
   color: #1a1a1a;
   margin-bottom: 20px;
