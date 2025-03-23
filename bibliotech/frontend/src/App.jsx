@@ -1052,7 +1052,13 @@ const App = () => {
         setAutorLivro('');
         setGeneroLivro('');
         setAnoLivro('');
-        setMensagemSucesso('Livro cadastrado com sucesso!');
+        setMostrarFormulario(false);
+        setMensagemSucesso(`Livro "${novoLivro.titulo}" cadastrado com sucesso!`);
+        
+        // Limpar a mensagem de sucesso após 3 segundos
+        setTimeout(() => {
+          setMensagemSucesso('');
+        }, 3000);
       }
     } catch (error) {
       console.error('Erro ao cadastrar livro:', error);
