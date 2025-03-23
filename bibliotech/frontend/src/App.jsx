@@ -342,31 +342,53 @@ const App = () => {
       reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 'A',
+            raw: false,
+            defval: '',
+            blankrows: false
+          });
 
           console.log('Dados lidos do arquivo:', jsonData);
 
-          const livrosImportados = jsonData.map(item => ({
-            titulo: item.titulo || item.Titulo || item.TÍTULO || item.nome || item.Nome || item.NOME || '',
-            autor: item.autor || item.Autor || item.AUTOR || '',
-            genero: item.genero || item.Genero || item.GÊNERO || item.gênero || '',
-            ano: parseInt(item.ano || item.Ano || item.ANO || new Date().getFullYear()),
-            disponivel: true
-          }));
+          // Remover a primeira linha se for cabeçalho
+          const dados = jsonData.length > 0 ? jsonData.slice(1) : [];
+
+          const livrosImportados = dados.map(item => {
+            // Mapear as colunas do Excel para os campos do livro
+            const tombo = item.A || item.B || ''; // Ajuste as letras conforme a posição das colunas no seu arquivo
+            const titulo = item.B || item.C || '';
+            const autor = item.C || item.D || '';
+            const genero = item.D || item.E || '';
+            const ano = item.E || item.F || new Date().getFullYear();
+
+            return {
+              tombo: String(tombo).trim(),
+              titulo: String(titulo).trim(),
+              autor: String(autor).trim(),
+              genero: String(genero).trim(),
+              ano: parseInt(String(ano).trim()) || new Date().getFullYear(),
+              disponivel: true
+            };
+          });
 
           console.log('Livros mapeados:', livrosImportados);
 
           const livrosValidos = livrosImportados.filter(livro => 
-            livro.titulo && livro.autor && livro.genero
+            livro.tombo && livro.titulo && livro.autor && livro.genero &&
+            livro.tombo.trim() !== '' && 
+            livro.titulo.trim() !== '' && 
+            livro.autor.trim() !== '' && 
+            livro.genero.trim() !== ''
           );
 
           console.log('Livros válidos:', livrosValidos);
 
           if (livrosValidos.length === 0) {
-            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: título, autor e gênero.');
+            alert('Nenhum livro válido encontrado no arquivo. Certifique-se de que o arquivo tem as colunas: tombo, título, autor e gênero.');
             return;
           }
 
@@ -374,14 +396,14 @@ const App = () => {
             alert(`Atenção: ${livrosImportados.length - livrosValidos.length} livros foram ignorados por falta de dados obrigatórios.`);
           }
 
-          // Enviar para o backend usando o serviço de API
-          const response = await api.post('/api/livros/importar', livrosValidos);
+          // Enviar para o backend usando o serviço de autenticação
+          const response = await authService.post('/api/livros/importar', livrosValidos);
           
           if (response.data) {
             alert(`${response.data.resultado.sucesso.length} livros importados com sucesso!`);
             
             // Atualizar a lista de livros
-            const livrosResponse = await api.get('/api/livros');
+            const livrosResponse = await authService.get('/api/livros');
             if (livrosResponse.data) {
               setLivros(livrosResponse.data);
             }
@@ -392,8 +414,15 @@ const App = () => {
           }
         } catch (error) {
           console.error('Erro ao processar arquivo:', error);
-          const mensagemErro = error.response?.data?.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.';
-          alert(mensagemErro);
+          if (error.response?.status === 401) {
+            setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+            authService.logout();
+            setUsuarioAtual(null);
+            setMostrarLogin(true);
+          } else {
+            const mensagemErro = error.response?.data?.message || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido.';
+            alert(mensagemErro);
+          }
         }
       };
       reader.readAsArrayBuffer(file);
