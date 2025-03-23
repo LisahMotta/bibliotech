@@ -116,6 +116,7 @@ const App = () => {
   const [autorLivro, setAutorLivro] = useState('');
   const [generoLivro, setGeneroLivro] = useState('');
   const [anoLivro, setAnoLivro] = useState('');
+  const [mostrarCadastroAluno, setMostrarCadastroAluno] = useState(false);
 
   // Verificar atrasos diariamente
   useEffect(() => {
@@ -1024,6 +1025,40 @@ const App = () => {
         setMostrarLogin(true);
       } else {
         alert('Erro ao cadastrar livro. Verifique se todos os campos estão preenchidos corretamente.');
+      }
+    }
+  };
+
+  const handleEditarAluno = async (aluno) => {
+    try {
+      const response = await authService.put(`/api/alunos/${aluno._id}`, {
+        nome: aluno.nome,
+        matricula: aluno.matricula,
+        curso: aluno.curso
+      });
+      
+      if (response.data) {
+        setMensagemSucesso('Aluno atualizado com sucesso!');
+        buscarAlunos();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar aluno:', error);
+      setMensagemErro('Erro ao atualizar aluno. Por favor, tente novamente.');
+    }
+  };
+
+  const handleExcluirAluno = async (alunoId) => {
+    if (window.confirm('Tem certeza que deseja excluir este aluno?')) {
+      try {
+        const response = await authService.delete(`/api/alunos/${alunoId}`);
+        
+        if (response.data) {
+          setMensagemSucesso('Aluno excluído com sucesso!');
+          buscarAlunos();
+        }
+      } catch (error) {
+        console.error('Erro ao excluir aluno:', error);
+        setMensagemErro('Erro ao excluir aluno. Por favor, tente novamente.');
       }
     }
   };
