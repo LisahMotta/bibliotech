@@ -91,18 +91,21 @@ const importStudents = async (req, res) => {
 
     const students = await Promise.all(
       data.map(async (row) => {
+        // Verificar se os campos obrigatórios estão presentes
+        if (!row.nome && !row.name && !row.Nome && !row.NAME) {
+          throw new Error('Nome é obrigatório');
+        }
+        if (!row.ra && !row.RA && !row.Ra && !row.matricula && !row.Matricula) {
+          throw new Error('RA é obrigatório');
+        }
+        if (!row.serie && !row.Serie && !row.SÉRIE && !row.série && !row.grade && !row.Grade) {
+          throw new Error('Série é obrigatória');
+        }
+
         return Student.create({
-          name: row.name,
-          ra: row.ra,
-          grade: row.grade,
-          class: row.class,
-          email: row.email,
-          phone: row.phone,
-          address: row.address,
-          parentName: row.parentName,
-          parentPhone: row.parentPhone,
-          parentEmail: row.parentEmail,
-          photo: row.photo,
+          name: row.nome || row.name || row.Nome || row.NAME,
+          ra: row.ra || row.RA || row.Ra || row.matricula || row.Matricula,
+          grade: row.serie || row.Serie || row.SÉRIE || row.série || row.grade || row.Grade,
         });
       })
     );
@@ -112,7 +115,11 @@ const importStudents = async (req, res) => {
       students,
     });
   } catch (error) {
-    res.status(400).json({ message: 'Erro ao importar alunos.' });
+    console.error('Erro ao importar alunos:', error);
+    res.status(400).json({ 
+      message: 'Erro ao importar alunos.',
+      error: error.message 
+    });
   }
 };
 

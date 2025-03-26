@@ -31,6 +31,38 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
+  const handleFileUploadAluno = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const response = await studentService.importExcel(file);
+        if (response.data) {
+          alert(`${response.data.message}`);
+          
+          // Atualizar a lista de alunos
+          const alunosResponse = await studentService.getAll();
+          if (alunosResponse.data) {
+            setAlunos(alunosResponse.data);
+          }
+        }
+        
+        if (fileInputAlunoRef.current) {
+          fileInputAlunoRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Erro ao processar arquivo:', error);
+        if (error.response?.status === 401) {
+          setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
+          authService.logout();
+          setUsuarioAtual(null);
+          setMostrarLogin(true);
+        } else {
+          alert('Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido com as colunas: nome, RA e série.');
+        }
+      }
+    }
+  };
+
   return (
     <AuthProvider>
       <Router>
