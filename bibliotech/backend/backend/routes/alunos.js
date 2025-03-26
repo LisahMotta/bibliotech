@@ -16,9 +16,9 @@ router.get("/", async (req, res) => {
 
 // ➕ Criar um novo aluno
 router.post("/", async (req, res) => {
-  const { nome, numeroRegistro, serie } = req.body;
+  const { nome, RA, serie } = req.body;
   try {
-    const novoAluno = new Aluno({ nome, numeroRegistro, serie });
+    const novoAluno = new Aluno({ nome, RA, serie });
     await novoAluno.save();
     res.status(201).json(novoAluno);
   } catch (error) {
