@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/layout/Header';
@@ -9,6 +9,7 @@ import StudentManagement from './components/students/StudentManagement';
 import LoanManagement from './components/loans/LoanManagement';
 import Reports from './components/reports/Reports';
 import Login from './components/auth/Login';
+import { studentService } from './services/api';
 import './App.css';
 
 // Componente para proteger rotas
@@ -31,43 +32,35 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
+  const [alunos, setAlunos] = useState([]);
+  const fileInputAlunoRef = useRef(null);
+
   const handleFileUploadAluno = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      console.log('Arquivo selecionado:', file);
-      try {
-        console.log('Iniciando upload do arquivo...');
-        const response = await studentService.importExcel(file);
-        console.log('Resposta da importação:', response);
-        
-        if (response.data) {
-          alert(response.data.message);
-          
-          // Atualizar a lista de alunos
-          console.log('Atualizando lista de alunos...');
-          const alunosResponse = await studentService.getAll();
-          console.log('Lista de alunos atualizada:', alunosResponse);
-          
-          if (alunosResponse.data) {
-            setAlunos(alunosResponse.data);
-          }
-        }
-        
-        if (fileInputAlunoRef.current) {
-          fileInputAlunoRef.current.value = '';
-        }
-      } catch (error) {
-        console.error('Erro ao processar arquivo:', error);
-        if (error.response?.status === 401) {
-          setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
-          authService.logout();
-          setUsuarioAtual(null);
-          setMostrarLogin(true);
-        } else {
-          const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao processar o arquivo. Certifique-se de que é um arquivo Excel válido com as colunas: nome, RA e série.';
-          alert(errorMessage);
-        }
+    if (!file) return;
+  
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    try {
+      const response = await studentService.importExcel(formData);
+      alert(response.data.message);
+  
+      const alunosResponse = await studentService.getAll();
+      if (alunosResponse.data) {
+        setAlunos(alunosResponse.data);
       }
+  
+      if (fileInputAlunoRef.current) {
+        fileInputAlunoRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Erro ao importar Excel:', error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Erro ao processar o arquivo. Verifique o formato e as colunas.';
+      alert(errorMessage);
     }
   };
 
