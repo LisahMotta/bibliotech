@@ -80,45 +80,62 @@ const searchStudents = async (req, res) => {
 
 const importStudents = async (req, res) => {
   try {
+    console.log('Iniciando importação de alunos...');
+    console.log('Arquivo recebido:', req.file);
+
     if (!req.file) {
+      console.log('Nenhum arquivo recebido');
       return res.status(400).json({ message: 'Nenhum arquivo enviado.' });
     }
 
+    console.log('Lendo arquivo Excel...');
     const workbook = xlsx.read(req.file.buffer);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
+    console.log('Dados lidos do Excel:', data);
+
     const students = await Promise.all(
       data.map(async (row) => {
+        console.log('Processando linha:', row);
+        
         // Verificar se os campos obrigatórios estão presentes
         if (!row.nome && !row.name && !row.Nome && !row.NAME) {
+          console.log('Erro: Nome não encontrado na linha:', row);
           throw new Error('Nome é obrigatório');
         }
         if (!row.ra && !row.RA && !row.Ra && !row.matricula && !row.Matricula) {
+          console.log('Erro: RA não encontrado na linha:', row);
           throw new Error('RA é obrigatório');
         }
         if (!row.serie && !row.Serie && !row.SÉRIE && !row.série && !row.grade && !row.Grade) {
+          console.log('Erro: Série não encontrada na linha:', row);
           throw new Error('Série é obrigatória');
         }
 
-        return Student.create({
+        const studentData = {
           name: row.nome || row.name || row.Nome || row.NAME,
           ra: row.ra || row.RA || row.Ra || row.matricula || row.Matricula,
           grade: row.serie || row.Serie || row.SÉRIE || row.série || row.grade || row.Grade,
-        });
+        };
+
+        console.log('Dados do aluno a serem criados:', studentData);
+        return Student.create(studentData);
       })
     );
 
+    console.log('Alunos importados com sucesso:', students);
     res.status(201).json({
       message: `${students.length} alunos importados com sucesso.`,
       students,
     });
   } catch (error) {
-    console.error('Erro ao importar alunos:', error);
+    console.error('Erro detalhado ao importar alunos:', error);
     res.status(400).json({ 
       message: 'Erro ao importar alunos.',
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     });
   }
 };
