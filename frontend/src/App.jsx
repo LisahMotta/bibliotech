@@ -39,11 +39,8 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
   
-    const formData = new FormData();
-    formData.append('file', file);
-  
     try {
-      const response = await studentService.importExcel(formData);
+      const response = await studentService.importExcel(file);
       alert(response.data.message);
   
       const alunosResponse = await studentService.getAll();
