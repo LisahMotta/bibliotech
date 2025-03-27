@@ -38,10 +38,10 @@ function App() {
       try {
         console.log('Iniciando upload do arquivo...');
         const response = await studentService.importExcel(file);
-        console.log('Resposta do servidor:', response);
+        console.log('Resposta da importação:', response);
         
         if (response.data) {
-          alert(`${response.data.message}`);
+          alert(response.data.message);
           
           // Atualizar a lista de alunos
           console.log('Atualizando lista de alunos...');
@@ -57,7 +57,7 @@ function App() {
           fileInputAlunoRef.current.value = '';
         }
       } catch (error) {
-        console.error('Erro detalhado ao processar arquivo:', error);
+        console.error('Erro ao processar arquivo:', error);
         if (error.response?.status === 401) {
           setMensagemErro('Sua sessão expirou. Por favor, faça login novamente.');
           authService.logout();
