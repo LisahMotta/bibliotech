@@ -42,6 +42,9 @@ const createLoan = async (req, res) => {
     if (!book) {
       return res.status(404).json({ message: 'Livro não encontrado.' });
     }
+    if (book.status !== 'available') {
+      return res.status(400).json({ message: 'Livro não está disponível para empréstimo.' });
+    }
     if (book.availableQuantity <= 0) {
       return res.status(400).json({ message: 'Livro não disponível para empréstimo.' });
     }
@@ -60,9 +63,11 @@ const createLoan = async (req, res) => {
       dueDate: dueDate || new Date(new Date().setDate(new Date().getDate() + 15)),
     });
 
-    // Atualiza a quantidade disponível do livro
+    // Atualiza a quantidade disponível do livro e seu status
+    const newAvailableQuantity = book.availableQuantity - 1;
     await book.update({
-      availableQuantity: book.availableQuantity - 1,
+      availableQuantity: newAvailableQuantity,
+      status: newAvailableQuantity === 0 ? 'unavailable' : 'available'
     });
 
     res.status(201).json(loan);
@@ -104,9 +109,11 @@ const returnBook = async (req, res) => {
       fine,
     });
 
-    // Atualiza a quantidade disponível do livro
+    // Atualiza a quantidade disponível do livro e seu status
+    const newAvailableQuantity = loan.Book.availableQuantity + 1;
     await loan.Book.update({
-      availableQuantity: loan.Book.availableQuantity + 1,
+      availableQuantity: newAvailableQuantity,
+      status: newAvailableQuantity > 0 ? 'available' : 'unavailable'
     });
 
     res.json(loan);

@@ -1,7 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { loanService, studentService, bookService } from '../../services/api';
 
 const LoanManagement = () => {
-  const [loanType, setLoanType] = useState('new'); // 'new' ou 'return'
+  const [loanType, setLoanType] = useState('new');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [books, setBooks] = useState([]);
+  const [activeLoans, setActiveLoans] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedBook, setSelectedBook] = useState('');
+  const [loanDate, setLoanDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [studentsRes, booksRes, loansRes] = await Promise.all([
+        studentService.getAll(),
+        bookService.getAll(),
+        loanService.getActive()
+      ]);
+      setStudents(studentsRes.data);
+      setBooks(booksRes.data);
+      setActiveLoans(loansRes.data);
+    } catch (err) {
+      setError('Erro ao carregar dados. Por favor, recarregue a página.');
+      console.error('Erro ao carregar dados:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLoan = async (e) => {
+    e.preventDefault();
+    if (!selectedStudent || !selectedBook) {
+      setError('Por favor, selecione um aluno e um livro.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      await loanService.create({
+        studentId: selectedStudent,
+        bookId: selectedBook,
+        loanDate,
+        dueDate
+      });
+      alert('Empréstimo registrado com sucesso!');
+      setSelectedStudent('');
+      setSelectedBook('');
+      setLoanDate(new Date().toISOString().split('T')[0]);
+      setDueDate(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      loadData();
+    } catch (err) {
+      setError('Erro ao registrar empréstimo. Por favor, tente novamente.');
+      console.error('Erro ao registrar empréstimo:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReturn = async (loanId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loanService.return(loanId);
+      alert('Devolução registrada com sucesso!');
+      loadData();
+    } catch (err) {
+      setError('Erro ao registrar devolução. Por favor, tente novamente.');
+      console.error('Erro ao registrar devolução:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -11,71 +90,115 @@ const LoanManagement = () => {
           <button
             className={`btn ${loanType === 'new' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setLoanType('new')}
+            disabled={loading}
           >
             Novo Empréstimo
           </button>
           <button
             className={`btn ${loanType === 'return' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setLoanType('return')}
+            disabled={loading}
           >
             Devolução
           </button>
         </div>
       </div>
 
-      <div className="card">
-        <h3 className="text-lg font-semibold mb-4">
-          {loanType === 'new' ? 'Cadastro de Empréstimo' : 'Registro de Devolução'}
-        </h3>
-        <form className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Aluno
-              </label>
-              <input
-                type="text"
-                placeholder="Buscar aluno..."
-                className="input"
-              />
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex justify-center items-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+
+      {loanType === 'new' && (
+        <div className="card">
+          <h3 className="text-lg font-semibold mb-4">Novo Empréstimo</h3>
+          <form onSubmit={handleCreateLoan} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Aluno
+                </label>
+                <select
+                  value={selectedStudent}
+                  onChange={(e) => setSelectedStudent(e.target.value)}
+                  className="input w-full"
+                  required
+                  disabled={loading}
+                >
+                  <option value="">Selecione um aluno</option>
+                  {students.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.name} - {student.ra} - {student.grade}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Livro
+                </label>
+                <select
+                  value={selectedBook}
+                  onChange={(e) => setSelectedBook(e.target.value)}
+                  className="input w-full"
+                  required
+                  disabled={loading}
+                >
+                  <option value="">Selecione um livro</option>
+                  {books
+                    .filter(book => book.availableQuantity > 0)
+                    .map((book) => (
+                      <option key={book.id} value={book.id}>
+                        {book.title} - {book.author} ({book.availableQuantity} disponíveis)
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data do Empréstimo
+                </label>
+                <input
+                  type="date"
+                  value={loanDate}
+                  onChange={(e) => {
+                    setLoanDate(e.target.value);
+                    const dueDate = new Date(e.target.value);
+                    dueDate.setDate(dueDate.getDate() + 15);
+                    setDueDate(dueDate.toISOString().split('T')[0]);
+                  }}
+                  className="input w-full"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Devolução Prevista
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  className="input w-full"
+                  disabled
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Livro
-              </label>
-              <input
-                type="text"
-                placeholder="Buscar livro..."
-                className="input"
-              />
+            <div className="flex justify-end">
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? 'Registrando...' : 'Registrar Empréstimo'}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Série do Aluno
-              </label>
-              <input
-                type="text"
-                placeholder="Ex: 1º Ano A"
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data
-              </label>
-              <input
-                type="date"
-                className="input"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button type="submit" className="btn btn-primary">
-              {loanType === 'new' ? 'Registrar Empréstimo' : 'Registrar Devolução'}
-            </button>
-          </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      )}
 
       <div className="card">
         <h3 className="text-lg font-semibold mb-4">Empréstimos Ativos</h3>
@@ -90,10 +213,13 @@ const LoanManagement = () => {
                   Livro
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Série
+                  Data do Empréstimo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data do Empréstimo
+                  Data de Devolução
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
@@ -101,28 +227,46 @@ const LoanManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {/* Exemplo de linha - será preenchido dinamicamente */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">Nome do Aluno</div>
-                  <div className="text-sm text-gray-500">RA: 123456</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">Título do Livro</div>
-                  <div className="text-sm text-gray-500">Autor</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  1º Ano A
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  20/03/2024
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-primary-600 hover:text-primary-900">
-                    Registrar Devolução
-                  </button>
-                </td>
-              </tr>
+              {activeLoans.map((loan) => (
+                <tr key={loan.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{loan.Student.name}</div>
+                    <div className="text-sm text-gray-500">{loan.Student.ra} - {loan.Student.grade}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{loan.Book.title}</div>
+                    <div className="text-sm text-gray-500">{loan.Book.author}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(loan.loanDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(loan.dueDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      loan.status === 'active' ? 'bg-green-100 text-green-800' :
+                      loan.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {loan.status === 'active' ? 'Ativo' :
+                       loan.status === 'overdue' ? 'Atrasado' :
+                       'Devolvido'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {loan.status !== 'returned' && (
+                      <button
+                        onClick={() => handleReturn(loan.id)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        disabled={loading}
+                      >
+                        Devolver
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
