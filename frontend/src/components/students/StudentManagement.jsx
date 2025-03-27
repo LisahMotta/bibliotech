@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { studentService } from '../../services/api';
 
 const StudentManagement = () => {
@@ -6,22 +6,46 @@ const StudentManagement = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [students, setStudents] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  const loadStudents = async () => {
+    try {
+      const response = await studentService.getAll();
+      if (response.data) {
+        setStudents(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar alunos:', error);
+      setError('Erro ao carregar lista de alunos.');
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
     try {
       const response = await studentService.search(searchTerm);
       setSearchResults(response.data);
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
       setError('Erro ao buscar alunos. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleImportExcel = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    setLoading(true);
+    setError(null);
 
     try {
       console.log('Iniciando importação do arquivo:', file.name);
@@ -30,22 +54,44 @@ const StudentManagement = () => {
 
       if (response.data) {
         alert(response.data.message);
-        
-        // Atualizar a lista de alunos
-        const studentsResponse = await studentService.getAll();
-        if (studentsResponse.data) {
-          setStudents(studentsResponse.data);
-        }
+        await loadStudents(); // Recarrega a lista de alunos
       }
 
-      // Limpar o input de arquivo
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error('Erro ao importar alunos:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao importar alunos. Verifique o formato do arquivo.';
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Erro ao importar alunos. Verifique o formato do arquivo.';
+      setError(errorMessage);
       alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await studentService.exportExcel();
+      
+      // Criar um link para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'alunos.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar alunos:', error);
+      setError('Erro ao exportar alunos. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,8 +111,16 @@ const StudentManagement = () => {
               className="hidden"
               ref={fileInputRef}
               onChange={handleImportExcel}
+              disabled={loading}
             />
           </label>
+          <button 
+            className="btn btn-success"
+            onClick={handleExportExcel}
+            disabled={loading}
+          >
+            Exportar Lista
+          </button>
         </div>
       </div>
 
@@ -79,8 +133,9 @@ const StudentManagement = () => {
               className="input flex-grow"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={loading}
             />
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               Buscar
             </button>
           </div>
@@ -90,39 +145,44 @@ const StudentManagement = () => {
         </form>
       </div>
 
+      {loading && (
+        <div className="flex justify-center items-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <span className="block sm:inline">{error}</span>
         </div>
       )}
 
-      <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Lista de Alunos</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RA</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Série</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="px-6 py-3 border-b text-left">Nome</th>
+              <th className="px-6 py-3 border-b text-left">RA</th>
+              <th className="px-6 py-3 border-b text-left">Série</th>
+              <th className="px-6 py-3 border-b text-left">Email</th>
+              <th className="px-6 py-3 border-b text-left">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(searchResults.length > 0 ? searchResults : students).map((student) => (
+              <tr key={student.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 border-b">{student.name}</td>
+                <td className="px-6 py-4 border-b">{student.ra}</td>
+                <td className="px-6 py-4 border-b">{student.grade}</td>
+                <td className="px-6 py-4 border-b">{student.email}</td>
+                <td className="px-6 py-4 border-b">
+                  <button className="text-blue-600 hover:text-blue-800 mr-2">Editar</button>
+                  <button className="text-red-600 hover:text-red-800">Excluir</button>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((student) => (
-                <tr key={student.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.ra}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.grade}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button className="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
-                    <button className="text-red-600 hover:text-red-900">Excluir</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

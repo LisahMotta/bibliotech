@@ -52,6 +52,11 @@ export const studentService = {
       },
     });
   },
+  exportExcel: () => {
+    return api.get('/students/export', {
+      responseType: 'blob',
+    });
+  },
 };
 
 // Serviços de Empréstimos

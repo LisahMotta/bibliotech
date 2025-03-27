@@ -10,6 +10,7 @@ const {
   deleteStudent,
   searchStudents,
   importStudents,
+  exportStudents,
 } = require('../controllers/studentController');
 
 // Configuração do multer para upload de arquivos
@@ -20,11 +21,12 @@ const upload = multer({ storage: storage });
 router.get('/', getAllStudents);
 router.get('/search', searchStudents);
 router.get('/:id', getStudentById);
+router.get('/export', auth, adminAuth, exportStudents);
 
 // Rotas protegidas (requerem autenticação)
 router.post('/', auth, adminAuth, createStudent);
+router.post('/import', auth, adminAuth, upload.single('file'), importStudents);
 router.put('/:id', auth, adminAuth, updateStudent);
 router.delete('/:id', auth, adminAuth, deleteStudent);
-router.post('/import', auth, adminAuth, upload.single('file'), importStudents);
 
 module.exports = router; 

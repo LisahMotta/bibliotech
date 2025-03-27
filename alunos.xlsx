@@ -1,0 +1,6 @@
+nome,RA,série,email,telefone,endereço,nome_responsável,telefone_responsável,email_responsável
+João Silva,12345,1º Ano A,joao.silva@escola.com,(11) 98765-4321,Rua das Flores, 123,Maria Silva,(11) 91234-5678,maria.silva@email.com
+Maria Santos,12346,2º Ano B,maria.santos@escola.com,(11) 98765-4322,Av. Principal, 456,José Santos,(11) 91234-5679,jose.santos@email.com
+Pedro Oliveira,12347,3º Ano C,pedro.oliveira@escola.com,(11) 98765-4323,Rua do Comércio, 789,Ana Oliveira,(11) 91234-5680,ana.oliveira@email.com
+Ana Costa,12348,1º Ano B,ana.costa@escola.com,(11) 98765-4324,Av. Central, 321,Carlos Costa,(11) 91234-5681,carlos.costa@email.com
+Lucas Ferreira,12349,2º Ano A,lucas.ferreira@escola.com,(11) 98765-4325,Rua das Árvores, 654,Paula Ferreira,(11) 91234-5682,paula.ferreira@email.com 

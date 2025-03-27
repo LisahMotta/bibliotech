@@ -140,6 +140,50 @@ const importStudents = async (req, res) => {
   }
 };
 
+const exportStudents = async (req, res) => {
+  try {
+    const students = await Student.findAll({
+      order: [['name', 'ASC']],
+    });
+
+    // Criar um novo workbook
+    const workbook = xlsx.utils.book_new();
+    
+    // Converter os dados dos alunos para o formato do Excel
+    const data = students.map(student => ({
+      nome: student.name,
+      RA: student.ra,
+      série: student.grade,
+      email: student.email || '',
+      telefone: student.phone || '',
+      endereço: student.address || '',
+      nome_responsável: student.parentName || '',
+      telefone_responsável: student.parentPhone || '',
+      email_responsável: student.parentEmail || '',
+      status: student.status
+    }));
+
+    // Criar uma nova planilha
+    const worksheet = xlsx.utils.json_to_sheet(data);
+
+    // Adicionar a planilha ao workbook
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Alunos');
+
+    // Gerar o buffer do arquivo Excel
+    const excelBuffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+    // Configurar os headers da resposta
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=alunos.xlsx');
+
+    // Enviar o arquivo
+    res.send(excelBuffer);
+  } catch (error) {
+    console.error('Erro ao exportar alunos:', error);
+    res.status(500).json({ message: 'Erro ao exportar alunos.' });
+  }
+};
+
 module.exports = {
   getAllStudents,
   getStudentById,
@@ -148,4 +192,5 @@ module.exports = {
   deleteStudent,
   searchStudents,
   importStudents,
+  exportStudents,
 }; 
