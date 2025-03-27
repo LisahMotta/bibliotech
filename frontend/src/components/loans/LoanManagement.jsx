@@ -10,6 +10,9 @@ const LoanManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchType, setSearchType] = useState('books'); // 'books', 'students', 'internet'
+  const [internetSearchResults, setInternetSearchResults] = useState([]);
+  const [selectedInternetBook, setSelectedInternetBook] = useState(null);
   
   // Estados para o modal de empréstimo
   const [showLoanModal, setShowLoanModal] = useState(false);
@@ -19,6 +22,20 @@ const LoanManagement = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loanDate, setLoanDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+  // Estados para o modal de cadastro de livro da internet
+  const [showInternetBookModal, setShowInternetBookModal] = useState(false);
+  const [newBook, setNewBook] = useState({
+    title: '',
+    author: '',
+    isbn: '',
+    publisher: '',
+    year: '',
+    quantity: 1,
+    location: '',
+    description: '',
+    coverUrl: ''
+  });
 
   useEffect(() => {
     loadData();
@@ -53,12 +70,35 @@ const LoanManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await bookService.search(searchTerm);
-      setSearchResults(response.data.filter(book => book.availableQuantity > 0 && book.status === 'available'));
+      let response;
+      switch (searchType) {
+        case 'books':
+          response = await bookService.search(searchTerm);
+          setSearchResults(response.data);
+          break;
+        case 'students':
+          response = await studentService.search(searchTerm);
+          const studentsWithLoans = response.data.map(student => ({
+            ...student,
+            activeLoans: activeLoans.filter(loan => loan.studentId === student.id)
+          }));
+          setSearchResults(studentsWithLoans);
+          break;
+        case 'internet':
+          // Aqui você implementaria a chamada para a API de livros da internet
+          // Por exemplo, usando a API do Google Books
+          const googleBooksResponse = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchTerm)}`
+          );
+          const data = await googleBooksResponse.json();
+          setInternetSearchResults(data.items || []);
+          setSearchResults([]);
+          break;
+      }
       setShowSearchResults(true);
     } catch (err) {
-      setError('Erro ao buscar livros. Por favor, tente novamente.');
-      console.error('Erro ao buscar livros:', err);
+      setError('Erro ao buscar. Por favor, tente novamente.');
+      console.error('Erro ao buscar:', err);
     } finally {
       setLoading(false);
     }
@@ -120,6 +160,40 @@ const LoanManagement = () => {
     }
   };
 
+  const handleSelectInternetBook = (book) => {
+    setSelectedInternetBook(book);
+    setNewBook({
+      title: book.volumeInfo.title,
+      author: book.volumeInfo.authors ? book.volumeInfo.authors.join(', ') : '',
+      isbn: book.volumeInfo.industryIdentifiers?.[0]?.identifier || '',
+      publisher: book.volumeInfo.publisher || '',
+      year: book.volumeInfo.publishedDate?.split('-')[0] || '',
+      quantity: 1,
+      location: '',
+      description: book.volumeInfo.description || '',
+      coverUrl: book.volumeInfo.imageLinks?.thumbnail || ''
+    });
+    setShowInternetBookModal(true);
+  };
+
+  const handleSaveInternetBook = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await bookService.create(newBook);
+      alert('Livro cadastrado com sucesso!');
+      setShowInternetBookModal(false);
+      setSelectedInternetBook(null);
+      loadData();
+    } catch (err) {
+      setError('Erro ao cadastrar livro. Por favor, tente novamente.');
+      console.error('Erro ao cadastrar livro:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetLoanForm = () => {
     setSelectedBook(null);
     setSelectedStudent(null);
@@ -162,10 +236,25 @@ const LoanManagement = () => {
       )}
 
       <div className="card">
+        <div className="mb-4 flex space-x-4">
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+            className="input w-48"
+          >
+            <option value="books">Livros Cadastrados</option>
+            <option value="students">Alunos Cadastrados</option>
+            <option value="internet">Buscar na Internet</option>
+          </select>
+        </div>
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar livro por título, autor ou ISBN..."
+            placeholder={
+              searchType === 'books' ? 'Buscar livro por título, autor ou ISBN...' :
+              searchType === 'students' ? 'Buscar aluno por nome ou RA...' :
+              'Buscar livro na internet...'
+            }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -182,31 +271,83 @@ const LoanManagement = () => {
         </div>
         {showSearchResults && searchResults.length > 0 && (
           <div className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
-            {searchResults.map((book) => (
+            {searchResults.map((item) => (
               <div
-                key={book.id}
-                className="p-3 hover:bg-gray-50 flex justify-between items-center border-b last:border-b-0"
+                key={item.id}
+                className="p-3 hover:bg-gray-50 border-b last:border-b-0"
               >
-                <div>
-                  <div className="font-medium">{book.title}</div>
-                  <div className="text-sm text-gray-600">
-                    {book.author} - Disponíveis: {book.availableQuantity}
+                {searchType === 'books' ? (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{item.title}</div>
+                      <div className="text-sm text-gray-600">
+                        {item.author} - Disponíveis: {item.availableQuantity}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleQuickLoan(item)}
+                      className="btn btn-primary btn-sm"
+                      disabled={loading}
+                    >
+                      Emprestar
+                    </button>
                   </div>
-                </div>
-                <button
-                  onClick={() => handleQuickLoan(book)}
-                  className="btn btn-primary btn-sm"
-                  disabled={loading}
-                >
-                  Emprestar
-                </button>
+                ) : searchType === 'students' ? (
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {item.ra} - {item.grade}
+                    </div>
+                    {item.activeLoans.length > 0 && (
+                      <div className="mt-2 text-sm">
+                        <div className="font-medium text-gray-700">Livros Emprestados:</div>
+                        {item.activeLoans.map(loan => (
+                          <div key={loan.id} className="text-gray-600">
+                            {loan.Book.title} - Devolver até: {new Date(loan.dueDate).toLocaleDateString()}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
         )}
-        {showSearchResults && searchResults.length === 0 && (
-          <div className="mt-2 text-gray-600">
-            Nenhum livro disponível encontrado.
+        {searchType === 'internet' && internetSearchResults.length > 0 && (
+          <div className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+            {internetSearchResults.map((book) => (
+              <div
+                key={book.id}
+                className="p-3 hover:bg-gray-50 border-b last:border-b-0"
+              >
+                <div className="flex items-start space-x-4">
+                  {book.volumeInfo.imageLinks?.thumbnail && (
+                    <img
+                      src={book.volumeInfo.imageLinks.thumbnail}
+                      alt={book.volumeInfo.title}
+                      className="w-16 h-24 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="font-medium">{book.volumeInfo.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {book.volumeInfo.authors?.join(', ')}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {book.volumeInfo.publisher} - {book.volumeInfo.publishedDate}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleSelectInternetBook(book)}
+                    className="btn btn-primary btn-sm"
+                    disabled={loading}
+                  >
+                    Cadastrar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -320,6 +461,146 @@ const LoanManagement = () => {
                   disabled={loading || !selectedStudent}
                 >
                   {loading ? 'Registrando...' : 'Fazer Empréstimo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Livro da Internet */}
+      {showInternetBookModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Cadastrar Livro</h3>
+              <button
+                onClick={() => {
+                  setShowInternetBookModal(false);
+                  setSelectedInternetBook(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInternetBook} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.title}
+                    onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+                    className="input w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Autor
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.author}
+                    onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+                    className="input w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ISBN
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.isbn}
+                    onChange={(e) => setNewBook({ ...newBook, isbn: e.target.value })}
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Editora
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.publisher}
+                    onChange={(e) => setNewBook({ ...newBook, publisher: e.target.value })}
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ano
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.year}
+                    onChange={(e) => setNewBook({ ...newBook, year: e.target.value })}
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Quantidade
+                  </label>
+                  <input
+                    type="number"
+                    value={newBook.quantity}
+                    onChange={(e) => setNewBook({ ...newBook, quantity: parseInt(e.target.value) })}
+                    className="input w-full"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Localização
+                  </label>
+                  <input
+                    type="text"
+                    value={newBook.location}
+                    onChange={(e) => setNewBook({ ...newBook, location: e.target.value })}
+                    className="input w-full"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  value={newBook.description}
+                  onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
+                  className="input w-full"
+                  rows="3"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInternetBookModal(false);
+                    setSelectedInternetBook(null);
+                  }}
+                  className="btn btn-secondary"
+                  disabled={loading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Cadastrando...' : 'Cadastrar Livro'}
                 </button>
               </div>
             </form>
