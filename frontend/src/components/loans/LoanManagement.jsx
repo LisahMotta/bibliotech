@@ -2,19 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { loanService, studentService, bookService } from '../../services/api';
 
 const LoanManagement = () => {
-  const [loanType, setLoanType] = useState('new');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [students, setStudents] = useState([]);
   const [books, setBooks] = useState([]);
   const [activeLoans, setActiveLoans] = useState([]);
-  const [selectedStudent, setSelectedStudent] = useState('');
-  const [selectedBook, setSelectedBook] = useState('');
-  const [loanDate, setLoanDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  
+  // Estados para o modal de empréstimo
+  const [showLoanModal, setShowLoanModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [studentSearchResults, setStudentSearchResults] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [loanDate, setLoanDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
   useEffect(() => {
     loadData();
@@ -60,10 +64,32 @@ const LoanManagement = () => {
     }
   };
 
-  const handleQuickLoan = (bookId) => {
-    setSelectedBook(bookId);
+  const handleQuickLoan = (book) => {
+    setSelectedBook(book);
+    setShowLoanModal(true);
     setShowSearchResults(false);
     setSearchTerm('');
+  };
+
+  const handleStudentSearch = (value) => {
+    setStudentSearchTerm(value);
+    if (!value.trim()) {
+      setStudentSearchResults([]);
+      return;
+    }
+
+    const searchValue = value.toLowerCase();
+    const filteredStudents = students.filter(student => 
+      student.name.toLowerCase().includes(searchValue) ||
+      student.ra.toLowerCase().includes(searchValue)
+    );
+    setStudentSearchResults(filteredStudents);
+  };
+
+  const handleSelectStudent = (student) => {
+    setSelectedStudent(student);
+    setStudentSearchTerm(`${student.name} - ${student.ra} - ${student.grade}`);
+    setStudentSearchResults([]);
   };
 
   const handleCreateLoan = async (e) => {
@@ -77,16 +103,14 @@ const LoanManagement = () => {
     setError(null);
     try {
       await loanService.create({
-        studentId: selectedStudent,
-        bookId: selectedBook,
+        studentId: selectedStudent.id,
+        bookId: selectedBook.id,
         loanDate,
         dueDate
       });
       alert('Empréstimo registrado com sucesso!');
-      setSelectedStudent('');
-      setSelectedBook('');
-      setLoanDate(new Date().toISOString().split('T')[0]);
-      setDueDate(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      setShowLoanModal(false);
+      resetLoanForm();
       loadData();
     } catch (err) {
       setError('Erro ao registrar empréstimo. Por favor, tente novamente.');
@@ -94,6 +118,14 @@ const LoanManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetLoanForm = () => {
+    setSelectedBook(null);
+    setSelectedStudent(null);
+    setStudentSearchTerm('');
+    setLoanDate(new Date().toISOString().split('T')[0]);
+    setDueDate(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   };
 
   const handleReturn = async (loanId) => {
@@ -115,22 +147,6 @@ const LoanManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Empréstimos</h2>
-        <div className="space-x-4">
-          <button
-            className={`btn ${loanType === 'new' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setLoanType('new')}
-            disabled={loading}
-          >
-            Novo Empréstimo
-          </button>
-          <button
-            className={`btn ${loanType === 'return' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setLoanType('return')}
-            disabled={loading}
-          >
-            Devolução
-          </button>
-        </div>
       </div>
 
       {error && (
@@ -145,136 +161,169 @@ const LoanManagement = () => {
         </div>
       )}
 
-      {loanType === 'new' && (
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Novo Empréstimo</h3>
-          <div className="mb-6">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar livro por título, autor ou ISBN..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="input w-full pr-24"
-                disabled={loading}
-              />
-              <button
-                onClick={handleSearch}
-                className="btn btn-secondary absolute right-2 top-1/2 transform -translate-y-1/2"
-                disabled={loading}
+      <div className="card">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar livro por título, autor ou ISBN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="input w-full pr-24"
+            disabled={loading}
+          />
+          <button
+            onClick={handleSearch}
+            className="btn btn-secondary absolute right-2 top-1/2 transform -translate-y-1/2"
+            disabled={loading}
+          >
+            Buscar
+          </button>
+        </div>
+        {showSearchResults && searchResults.length > 0 && (
+          <div className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+            {searchResults.map((book) => (
+              <div
+                key={book.id}
+                className="p-3 hover:bg-gray-50 flex justify-between items-center border-b last:border-b-0"
               >
-                Buscar
-              </button>
-            </div>
-            {showSearchResults && searchResults.length > 0 && (
-              <div className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
-                {searchResults.map((book) => (
-                  <div
-                    key={book.id}
-                    className="p-3 hover:bg-gray-50 flex justify-between items-center border-b last:border-b-0"
-                  >
-                    <div>
-                      <div className="font-medium">{book.title}</div>
-                      <div className="text-sm text-gray-600">
-                        {book.author} - Disponíveis: {book.availableQuantity}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleQuickLoan(book.id)}
-                      className="btn btn-primary btn-sm"
-                      disabled={loading}
-                    >
-                      Emprestar
-                    </button>
+                <div>
+                  <div className="font-medium">{book.title}</div>
+                  <div className="text-sm text-gray-600">
+                    {book.author} - Disponíveis: {book.availableQuantity}
                   </div>
-                ))}
+                </div>
+                <button
+                  onClick={() => handleQuickLoan(book)}
+                  className="btn btn-primary btn-sm"
+                  disabled={loading}
+                >
+                  Emprestar
+                </button>
               </div>
-            )}
-            {showSearchResults && searchResults.length === 0 && (
-              <div className="mt-2 text-gray-600">
-                Nenhum livro disponível encontrado.
-              </div>
-            )}
+            ))}
           </div>
-          <form onSubmit={handleCreateLoan} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Aluno
-                </label>
-                <select
-                  value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="input w-full"
-                  required
-                  disabled={loading}
-                >
-                  <option value="">Selecione um aluno</option>
-                  {students.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name} - {student.ra} - {student.grade}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Livro
-                </label>
-                <select
-                  value={selectedBook}
-                  onChange={(e) => setSelectedBook(e.target.value)}
-                  className="input w-full"
-                  required
-                  disabled={loading}
-                >
-                  <option value="">Selecione um livro</option>
-                  {books
-                    .filter(book => book.availableQuantity > 0 && book.status === 'available')
-                    .map((book) => (
-                      <option key={book.id} value={book.id}>
-                        {book.title} - {book.author} ({book.availableQuantity} disponíveis)
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data do Empréstimo
-                </label>
-                <input
-                  type="date"
-                  value={loanDate}
-                  onChange={(e) => {
-                    setLoanDate(e.target.value);
-                    const dueDate = new Date(e.target.value);
-                    dueDate.setDate(dueDate.getDate() + 15);
-                    setDueDate(dueDate.toISOString().split('T')[0]);
-                  }}
-                  className="input w-full"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Devolução Prevista
-                </label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  className="input w-full"
-                  disabled
-                />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Registrando...' : 'Registrar Empréstimo'}
+        )}
+        {showSearchResults && searchResults.length === 0 && (
+          <div className="mt-2 text-gray-600">
+            Nenhum livro disponível encontrado.
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Empréstimo */}
+      {showLoanModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Novo Empréstimo</h3>
+              <button
+                onClick={() => {
+                  setShowLoanModal(false);
+                  resetLoanForm();
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
               </button>
             </div>
-          </form>
+
+            <form onSubmit={handleCreateLoan} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Livro Selecionado
+                </label>
+                <div className="p-3 bg-gray-50 rounded">
+                  <div className="font-medium">{selectedBook?.title}</div>
+                  <div className="text-sm text-gray-600">
+                    {selectedBook?.author} - Disponíveis: {selectedBook?.availableQuantity}
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Buscar Aluno
+                </label>
+                <input
+                  type="text"
+                  value={studentSearchTerm}
+                  onChange={(e) => handleStudentSearch(e.target.value)}
+                  placeholder="Digite o nome ou RA do aluno..."
+                  className="input w-full"
+                  required
+                />
+                {studentSearchResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-40 overflow-y-auto">
+                    {studentSearchResults.map((student) => (
+                      <div
+                        key={student.id}
+                        className="p-2 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleSelectStudent(student)}
+                      >
+                        <div className="font-medium">{student.name}</div>
+                        <div className="text-sm text-gray-600">{student.ra} - {student.grade}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data do Empréstimo
+                  </label>
+                  <input
+                    type="date"
+                    value={loanDate}
+                    onChange={(e) => {
+                      setLoanDate(e.target.value);
+                      const newDueDate = new Date(e.target.value);
+                      newDueDate.setDate(newDueDate.getDate() + 15);
+                      setDueDate(newDueDate.toISOString().split('T')[0]);
+                    }}
+                    className="input w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data de Devolução
+                  </label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="input w-full"
+                    required
+                    min={loanDate}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLoanModal(false);
+                    resetLoanForm();
+                  }}
+                  className="btn btn-secondary"
+                  disabled={loading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || !selectedStudent}
+                >
+                  {loading ? 'Registrando...' : 'Fazer Empréstimo'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
