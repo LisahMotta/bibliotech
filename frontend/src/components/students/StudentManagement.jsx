@@ -1,18 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { studentService } from '../../services/api';
 
 const StudentManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    // Implementar busca de alunos
-    console.log('Buscando por:', searchTerm);
+    try {
+      const response = await studentService.search(searchTerm);
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      setError('Erro ao buscar alunos. Por favor, tente novamente.');
+    }
   };
 
-  const handleImportExcel = () => {
-    // Implementar importação de Excel
-    console.log('Importando lista de alunos...');
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      console.log('Iniciando importação do arquivo:', file.name);
+      const response = await studentService.importExcel(file);
+      console.log('Resposta da importação:', response);
+
+      if (response.data) {
+        alert(response.data.message);
+        
+        // Atualizar a lista de alunos
+        const studentsResponse = await studentService.getAll();
+        if (studentsResponse.data) {
+          setStudents(studentsResponse.data);
+        }
+      }
+
+      // Limpar o input de arquivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Erro ao importar alunos:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao importar alunos. Verifique o formato do arquivo.';
+      alert(errorMessage);
+    }
   };
 
   return (
@@ -23,9 +57,16 @@ const StudentManagement = () => {
           <button className="btn btn-primary" onClick={() => console.log('Cadastrar aluno')}>
             Cadastrar Aluno
           </button>
-          <button className="btn btn-secondary" onClick={handleImportExcel}>
+          <label className="btn btn-secondary cursor-pointer">
             Importar Lista
-          </button>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImportExcel}
+            />
+          </label>
         </div>
       </div>
 
@@ -49,41 +90,40 @@ const StudentManagement = () => {
         </form>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Ficha de Cadastro</h3>
-          <p className="text-gray-600">
-            Cadastre novos alunos com informações detalhadas
-          </p>
-        </div>
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Lista de Alunos</h3>
-          <p className="text-gray-600">
-            Visualize e gerencie todos os alunos cadastrados
-          </p>
-        </div>
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Importação em Lote</h3>
-          <p className="text-gray-600">
-            Importe uma lista de alunos através de arquivo Excel
-          </p>
-        </div>
-      </div>
-
-      {searchResults.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Resultados da Busca</h3>
-          <div className="space-y-4">
-            {searchResults.map((student) => (
-              <div key={student.id} className="border-b pb-4">
-                <h4 className="font-medium">{student.name}</h4>
-                <p className="text-gray-600">RA: {student.ra}</p>
-                <p className="text-sm text-gray-500">Série: {student.grade}</p>
-              </div>
-            ))}
-          </div>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{error}</span>
         </div>
       )}
+
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4">Lista de Alunos</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RA</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Série</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {students.map((student) => (
+                <tr key={student.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.ra}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.grade}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button className="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
+                    <button className="text-red-600 hover:text-red-900">Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
