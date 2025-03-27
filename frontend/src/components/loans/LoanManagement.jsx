@@ -12,6 +12,9 @@ const LoanManagement = () => {
   const [selectedBook, setSelectedBook] = useState('');
   const [loanDate, setLoanDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -35,6 +38,32 @@ const LoanManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      setShowSearchResults(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await bookService.search(searchTerm);
+      setSearchResults(response.data.filter(book => book.availableQuantity > 0 && book.status === 'available'));
+      setShowSearchResults(true);
+    } catch (err) {
+      setError('Erro ao buscar livros. Por favor, tente novamente.');
+      console.error('Erro ao buscar livros:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickLoan = (bookId) => {
+    setSelectedBook(bookId);
+    setShowSearchResults(false);
+    setSearchTerm('');
   };
 
   const handleCreateLoan = async (e) => {
@@ -119,6 +148,55 @@ const LoanManagement = () => {
       {loanType === 'new' && (
         <div className="card">
           <h3 className="text-lg font-semibold mb-4">Novo Empréstimo</h3>
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar livro por título, autor ou ISBN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="input w-full pr-24"
+                disabled={loading}
+              />
+              <button
+                onClick={handleSearch}
+                className="btn btn-secondary absolute right-2 top-1/2 transform -translate-y-1/2"
+                disabled={loading}
+              >
+                Buscar
+              </button>
+            </div>
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="mt-2 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+                {searchResults.map((book) => (
+                  <div
+                    key={book.id}
+                    className="p-3 hover:bg-gray-50 flex justify-between items-center border-b last:border-b-0"
+                  >
+                    <div>
+                      <div className="font-medium">{book.title}</div>
+                      <div className="text-sm text-gray-600">
+                        {book.author} - Disponíveis: {book.availableQuantity}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleQuickLoan(book.id)}
+                      className="btn btn-primary btn-sm"
+                      disabled={loading}
+                    >
+                      Emprestar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {showSearchResults && searchResults.length === 0 && (
+              <div className="mt-2 text-gray-600">
+                Nenhum livro disponível encontrado.
+              </div>
+            )}
+          </div>
           <form onSubmit={handleCreateLoan} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -153,7 +231,7 @@ const LoanManagement = () => {
                 >
                   <option value="">Selecione um livro</option>
                   {books
-                    .filter(book => book.availableQuantity > 0)
+                    .filter(book => book.availableQuantity > 0 && book.status === 'available')
                     .map((book) => (
                       <option key={book.id} value={book.id}>
                         {book.title} - {book.author} ({book.availableQuantity} disponíveis)
