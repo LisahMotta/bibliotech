@@ -26,13 +26,14 @@ const getBookById = async (req, res) => {
 
 const createBook = async (req, res) => {
   try {
+    console.log('📚 Dados recebidos:', req.body);
     const book = await Book.create(req.body);
     res.status(201).json(book);
   } catch (error) {
-    res.status(400).json({ message: 'Erro ao criar livro.' });
+    console.error('❌ Erro ao criar livro:', error);
+    res.status(400).json({ message: 'Erro ao criar livro.', error: error.message });
   }
 };
-
 const updateBook = async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id);
