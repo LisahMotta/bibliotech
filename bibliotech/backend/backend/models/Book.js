@@ -19,7 +19,8 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       unique: true,
       validate: {
-        is: /^[\d-]{10,13}$/, // ISBN-10 ou ISBN-13
+  is: /^[0-9\-]{10,17}$/ // permite ISBN com hífens, entre 10 e 17 caracteres
+}
       },
     },
     publisher: {
