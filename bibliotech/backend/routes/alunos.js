@@ -79,11 +79,24 @@ router.post('/importar', auth, async (req, res) => {
 
                 // Criar novo aluno
                 const novoAluno = new Aluno({
-                    nome: aluno.nome,
-                    numeroRegistro: aluno.matricula,
-                    curso: aluno.curso,
-                    email: aluno.email || `${aluno.matricula}@escola.com`
-                });
+  nome: aluno.nome,
+  matricula: aluno.RA, // ← aqui adaptamos
+  curso: aluno.curso,
+  email: aluno.email || `${aluno.RA}@escola.com`
+});
+const alunoExistente = await Aluno.findOne({ 
+  $or: [
+    { matricula: aluno.RA },
+    { email: aluno.email }
+  ]
+});
+const normalizado = {
+  nome: aluno.nome,
+  matricula: aluno.matricula || aluno.RA,
+  curso: aluno.curso,
+  email: aluno.email || `${aluno.RA || aluno.matricula}@escola.com`
+};
+
 
                 await novoAluno.save();
                 resultados.sucesso.push(novoAluno);
