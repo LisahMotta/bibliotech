@@ -84,12 +84,7 @@ router.post('/importar', auth, async (req, res) => {
   curso: aluno.curso,
   email: aluno.email || `${aluno.RA}@escola.com`
 });
-const alunoExistente = await Aluno.findOne({ 
-  $or: [
-    { matricula: aluno.RA },
-    { email: aluno.email }
-  ]
-});
+
 const normalizado = {
   nome: aluno.nome,
   matricula: aluno.matricula || aluno.RA,
