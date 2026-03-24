@@ -41,7 +41,6 @@ const Register = () => {
       setError('As senhas não coincidem.');
       return;
     }
-
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres.');
       return;
@@ -61,64 +60,64 @@ const Register = () => {
     }
   };
 
+  const inputStyle = {
+    width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db',
+    borderRadius: '0.5rem', fontSize: '0.875rem', color: '#111827',
+    outline: 'none', boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: '0.875rem', fontWeight: '600',
+    color: '#374151', marginBottom: '0.25rem',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            Cadastrar novo usuário
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Já tem conta?{' '}
-            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-              Entrar
-            </Link>
-          </p>
-        </div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '1rem',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+        padding: '2.5rem',
+        width: '100%',
+        maxWidth: '420px',
+      }}>
+        <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: '800', color: '#111827', marginBottom: '0.5rem' }}>
+          Cadastrar usuário
+        </h2>
+        <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280', marginBottom: '1.5rem' }}>
+          Já tem conta?{' '}
+          <Link to="/login" style={{ color: '#4f46e5', fontWeight: '600', textDecoration: 'none' }}>
+            Entrar
+          </Link>
+        </p>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
-              Nome completo
-            </label>
+            <label htmlFor="name" style={labelStyle}>Nome completo</label>
             <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              id="name" name="name" type="text" required
               placeholder="Nome completo"
-              value={formData.name}
-              onChange={handleChange}
+              value={formData.name} onChange={handleChange}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
-              Email
-            </label>
+            <label htmlFor="email" style={labelStyle}>Email</label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              id="email" name="email" type="email" required
               placeholder="email@exemplo.com"
-              value={formData.email}
-              onChange={handleChange}
+              value={formData.email} onChange={handleChange}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label htmlFor="role" className="block text-sm font-semibold text-gray-700 mb-1">
-              Perfil
-            </label>
+            <label htmlFor="role" style={labelStyle}>Perfil</label>
             <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              id="role" name="role"
+              value={formData.role} onChange={handleChange}
+              style={inputStyle}
             >
               <option value="librarian">Bibliotecário</option>
               <option value="admin">Administrador</option>
@@ -126,70 +125,56 @@ const Register = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
-              Senha
-            </label>
-            <div className="relative">
+            <label htmlFor="password" style={labelStyle}>Senha</label>
+            <div style={{ position: 'relative' }}>
               <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                id="password" name="password"
+                type={showPassword ? 'text' : 'password'} required
                 placeholder="Mínimo 6 caracteres"
-                value={formData.password}
-                onChange={handleChange}
+                value={formData.password} onChange={handleChange}
+                style={{ ...inputStyle, paddingRight: '2.5rem' }}
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
-                onClick={() => setShowPassword(!showPassword)}
-              >
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', top: '50%', right: '0.75rem', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0', display: 'flex', alignItems: 'center' }}>
                 <EyeIcon open={showPassword} />
               </button>
             </div>
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-1">
-              Confirmar senha
-            </label>
-            <div className="relative">
+            <label htmlFor="confirmPassword" style={labelStyle}>Confirmar senha</label>
+            <div style={{ position: 'relative' }}>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                required
-                className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                id="confirmPassword" name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'} required
                 placeholder="Repita a senha"
-                value={formData.confirmPassword}
-                onChange={handleChange}
+                value={formData.confirmPassword} onChange={handleChange}
+                style={{ ...inputStyle, paddingRight: '2.5rem' }}
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{ position: 'absolute', top: '50%', right: '0.75rem', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0', display: 'flex', alignItems: 'center' }}>
                 <EyeIcon open={showConfirmPassword} />
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 text-center">
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', textAlign: 'center' }}>
               {error}
             </div>
           )}
 
-          <div className="pt-1">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Cadastrando...' : 'Cadastrar'}
-            </button>
-          </div>
+          <button
+            type="submit" disabled={loading}
+            style={{
+              width: '100%', padding: '0.625rem', background: '#4f46e5',
+              color: 'white', border: 'none', borderRadius: '0.5rem',
+              fontSize: '0.875rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1, marginTop: '0.25rem',
+            }}
+          >
+            {loading ? 'Cadastrando...' : 'Cadastrar'}
+          </button>
         </form>
       </div>
     </div>
