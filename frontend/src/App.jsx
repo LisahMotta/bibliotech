@@ -9,6 +9,7 @@ import StudentManagement from './components/students/StudentManagement';
 import LoanManagement from './components/loans/LoanManagement';
 import Reports from './components/reports/Reports';
 import Login from './components/auth/Login';
+import Register from './components/auth/Register';
 import { studentService } from './services/api';
 import './App.css';
 
@@ -67,6 +68,7 @@ function App() {
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/"
               element={
