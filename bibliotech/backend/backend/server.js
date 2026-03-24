@@ -23,6 +23,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check endpoint (responds immediately, before DB)
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 // API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/books', require('./routes/books'));
@@ -55,16 +58,17 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001;
 
 const startServer = async () => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+  });
+
   try {
     await sequelize.authenticate();
     console.log('Conexão com o banco de dados estabelecida com sucesso.');
     await sequelize.sync();
     console.log('Modelos sincronizados com o banco de dados.');
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Servidor rodando na porta ${PORT}`);
-    });
   } catch (error) {
-    console.error('Erro ao iniciar o servidor:', error);
+    console.error('Erro ao conectar ao banco de dados:', error);
     process.exit(1);
   }
 };

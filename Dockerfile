@@ -16,6 +16,6 @@ COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 ENV NODE_ENV=production
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD ["node", "bibliotech/backend/backend/server.js"]
