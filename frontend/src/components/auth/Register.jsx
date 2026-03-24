@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EyeIcon = ({ open }) => (
   open ? (
@@ -17,6 +18,7 @@ const EyeIcon = ({ open }) => (
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,9 +51,8 @@ const Register = () => {
     setLoading(true);
     try {
       const { confirmPassword, ...userData } = formData;
-      const response = await authService.register(userData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      await authService.register(userData);
+      await login({ email: userData.email, password: userData.password });
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao cadastrar. Tente novamente.');

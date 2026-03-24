@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EyeIcon = ({ open }) => (
   open ? (
@@ -17,6 +17,7 @@ const EyeIcon = ({ open }) => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -31,9 +32,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const response = await authService.login(formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      await login(formData);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao fazer login. Por favor, tente novamente.');
