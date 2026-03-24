@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fundo arredondado -->
+  <rect width="64" height="64" rx="12" fill="#4f46e5"/>
+  <!-- Livro aberto -->
+  <g transform="translate(8, 10)">
+    <!-- Spine/lombada -->
+    <rect x="22" y="4" width="4" height="40" rx="1" fill="#c7d2fe"/>
+    <!-- Página esquerda -->
+    <path d="M22 6 C18 6 8 8 4 12 L4 44 C8 40 18 38 22 38 Z" fill="white" opacity="0.95"/>
+    <!-- Página direita -->
+    <path d="M26 6 C30 6 40 8 44 12 L44 44 C40 40 30 38 26 38 Z" fill="white" opacity="0.85"/>
+    <!-- Linhas página esquerda -->
+    <line x1="8" y1="17" x2="20" y2="15" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <line x1="8" y1="22" x2="20" y2="20" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <line x1="8" y1="27" x2="20" y2="25" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <!-- Linhas página direita -->
+    <line x1="28" y1="15" x2="40" y2="17" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+    <line x1="28" y1="20" x2="40" y2="22" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+    <line x1="28" y1="25" x2="40" y2="27" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  </g>
+</svg>
