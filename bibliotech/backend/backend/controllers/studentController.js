@@ -1,4 +1,5 @@
-const { Student } = require('../models');
+const { Student, Sequelize } = require('../models');
+const { Op } = Sequelize;
 const xlsx = require('xlsx');
 
 const getAllStudents = async (req, res) => {

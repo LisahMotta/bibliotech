@@ -1,0 +1,16 @@
+{
+  "name": "bibliotech",
+  "version": "1.0.0",
+  "description": "Sistema de Gerenciamento de Biblioteca Escolar",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node bibliotech/backend/backend/server.js",
+    "dev": "concurrently \"cd bibliotech/backend/backend && npm run dev\" \"cd frontend && npm run dev\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

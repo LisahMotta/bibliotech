@@ -18,10 +18,6 @@ module.exports = (sequelize) => {
     isbn: {
       type: DataTypes.STRING,
       unique: true,
-      validate: {
-  is: /^[0-9\-]{10,17}$/ // permite ISBN com hífens, entre 10 e 17 caracteres
-}
-      },
     },
     publisher: {
       type: DataTypes.STRING,
@@ -51,7 +47,7 @@ module.exports = (sequelize) => {
       },
     },
     location: {
-      type: DataTypes.STRING, // Ex: "Estante A, Prateleira 3"
+      type: DataTypes.STRING,
     },
     category: {
       type: DataTypes.STRING,
@@ -60,7 +56,7 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
     },
     coverImage: {
-      type: DataTypes.STRING, // URL da imagem
+      type: DataTypes.STRING,
     },
     status: {
       type: DataTypes.ENUM('available', 'unavailable', 'maintenance'),
@@ -69,4 +65,4 @@ module.exports = (sequelize) => {
   });
 
   return Book;
-}; 
+};

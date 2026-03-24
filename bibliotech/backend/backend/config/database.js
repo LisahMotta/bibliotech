@@ -2,30 +2,30 @@ require('dotenv').config();
 
 module.exports = {
   development: {
-    uri: process.env.MONGODB_URI,
-    options: {
-      user: process.env.MONGODB_USER,
-      pass: process.env.MONGODB_PASSWORD,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    url: process.env.DATABASE_URL || `postgres://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'bibliotech'}`,
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: false,
     },
+    logging: false,
   },
   test: {
-    uri: process.env.MONGODB_URI,
-    options: {
-      user: process.env.MONGODB_USER,
-      pass: process.env.MONGODB_PASSWORD,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    url: process.env.DATABASE_URL || `postgres://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'bibliotech'}`,
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: false,
     },
+    logging: false,
   },
   production: {
-    uri: process.env.MONGODB_URI,
-    options: {
-      user: process.env.MONGODB_USER,
-      pass: process.env.MONGODB_PASSWORD,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    url: process.env.DATABASE_URL,
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
     },
+    logging: false,
   },
-}; 
+};

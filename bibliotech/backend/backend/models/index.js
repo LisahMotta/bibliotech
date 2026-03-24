@@ -4,7 +4,14 @@ const Sequelize = require('sequelize');
 const config = require('../config/database');
 
 const db = {};
-const sequelize = new Sequelize(config[process.env.NODE_ENV || 'development']);
+const env = process.env.NODE_ENV || 'development';
+const dbConfig = config[env];
+
+const sequelize = new Sequelize(dbConfig.url, {
+  dialect: dbConfig.dialect,
+  dialectOptions: dbConfig.dialectOptions,
+  logging: dbConfig.logging,
+});
 
 fs.readdirSync(__dirname)
   .filter(file => {
@@ -15,7 +22,10 @@ fs.readdirSync(__dirname)
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    const modelExport = require(path.join(__dirname, file));
+    // Skip Mongoose models (they export an object, not a factory function)
+    if (typeof modelExport !== 'function') return;
+    const model = modelExport(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
 
@@ -28,4 +38,4 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db; 
+module.exports = db;

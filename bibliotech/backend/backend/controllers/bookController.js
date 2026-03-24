@@ -1,4 +1,5 @@
-const { Book } = require('../models');
+const { Book, Sequelize } = require('../models');
+const { Op } = Sequelize;
 const xlsx = require('xlsx');
 
 const getAllBooks = async (req, res) => {
