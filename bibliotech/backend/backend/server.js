@@ -36,6 +36,9 @@ const startServer = async () => {
   if (!process.env.DATABASE_URL) {
     console.error('ERRO: DATABASE_URL não está definida.');
   }
+  if (!process.env.JWT_SECRET) {
+    console.error('ERRO: JWT_SECRET não está definida. Autenticação não funcionará.');
+  }
 
   // Registra rotas (dependem dos models/DB)
   try {

@@ -2,10 +2,13 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não está configurado nas variáveis de ambiente.');
+  }
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
   );
 };
 
@@ -39,6 +42,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Erro no login:', error.message);
     res.status(500).json({ message: 'Erro ao fazer login.' });
   }
 };
@@ -71,6 +75,7 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Erro no registro:', error.message);
     res.status(500).json({ message: 'Erro ao registrar usuário.' });
   }
 };
