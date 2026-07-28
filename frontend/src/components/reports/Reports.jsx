@@ -44,19 +44,19 @@ const Reports = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card">
           <h3 className="text-lg font-semibold mb-2">Livros Emprestados Hoje</h3>
-          <p className="text-3xl font-bold text-primary-600">12</p>
+          <p className="text-3xl font-bold text-indigo-600">12</p>
         </div>
         <div className="card">
           <h3 className="text-lg font-semibold mb-2">Empréstimos na Semana</h3>
-          <p className="text-3xl font-bold text-primary-600">45</p>
+          <p className="text-3xl font-bold text-indigo-600">45</p>
         </div>
         <div className="card">
           <h3 className="text-lg font-semibold mb-2">Empréstimos no Mês</h3>
-          <p className="text-3xl font-bold text-primary-600">180</p>
+          <p className="text-3xl font-bold text-indigo-600">180</p>
         </div>
         <div className="card">
           <h3 className="text-lg font-semibold mb-2">Empréstimos no Ano</h3>
-          <p className="text-3xl font-bold text-primary-600">1,250</p>
+          <p className="text-3xl font-bold text-indigo-600">1,250</p>
         </div>
       </div>
 
